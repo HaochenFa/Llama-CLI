@@ -1,8 +1,12 @@
-import {Command} from 'commander'; // 引入 commander 库
-import {ConfigStore, LLMProfile} from './lib/config-store.js'; // 引入 ConfigStore
+import {Command} from 'commander';
+import {ConfigStore, LLMProfile} from './lib/config-store.js';
+import {ContextCompiler} from './lib/context-compiler.js'; // 引入 ContextCompiler
+import {OllamaAdapter} from './lib/adapters/ollama.adapter.js'; // 引入 OllamaAdapter
+import {InternalContext, ChatMessage} from './types/context.js'; // 引入 InternalContext 和 ChatMessage
 
 const program = new Command();
 const configStore = new ConfigStore();
+const contextCompiler = new ContextCompiler(); // 实例化 ContextCompiler
 
 // 定义 CLI 的基本信息
 program
@@ -80,6 +84,59 @@ program
         }
       })
   );
+
+// 定义 'chat' 命令
+program
+  .command('chat')
+  .description('Start an interactive chat session with the LLM.')
+  .argument('<prompt>', 'Your message to the LLM.')
+  .action(async (prompt: string) => {
+    const currentProfile = configStore.getCurrentProfile();
+    if (!currentProfile) {
+      console.error('Error: No LLM profile is currently active. Please use "llama-cli config add" to add a profile and "llama-cli config use" to set it as current.');
+      return;
+    }
+
+    let llmAdapter;
+    switch (currentProfile.type) {
+      case 'ollama':
+        llmAdapter = new OllamaAdapter(currentProfile.endpoint);
+        break;
+      case 'vllm':
+        console.error('Error: vLLM adapter is not yet implemented.');
+        return;
+      default:
+        console.error(`Error: Unsupported LLM type: ${currentProfile.type}`);
+        return;
+    }
+
+    // 构造一个简单的 InternalContext
+    const internalContext: InternalContext = {
+      long_term_memory: [],
+      available_tools: [],
+      file_context: [],
+      chat_history: [], // 初始聊天历史为空
+    };
+
+    // 生成系统提示
+    const systemPrompt = contextCompiler.compile(internalContext);
+
+    // 构造聊天消息
+    const messages: ChatMessage[] = [
+      {role: 'system', content: systemPrompt},
+      {role: 'user', content: prompt},
+    ];
+
+    console.log('LlamaCLI is thinking...');
+    try {
+      for await (const chunk of llmAdapter.chatStream(messages)) {
+        process.stdout.write(chunk); // 流式打印 LLM 响应
+      }
+      process.stdout.write('\n'); // 确保最后换行
+    } catch (error) {
+      console.error('\nError during chat session:', (error as Error).message);
+    }
+  });
 
 // 解析命令行参数
 program.parse(process.argv);
