@@ -3,10 +3,12 @@ import {ConfigStore, LLMProfile} from './lib/config-store.js';
 import {ContextCompiler} from './lib/context-compiler.js'; // 引入 ContextCompiler
 import {OllamaAdapter} from './lib/adapters/ollama.adapter.js'; // 引入 OllamaAdapter
 import {InternalContext, ChatMessage} from './types/context.js'; // 引入 InternalContext 和 ChatMessage
+import chalk from 'chalk'; // 引入 chalk 库
 
 const program = new Command();
 const configStore = new ConfigStore();
 const contextCompiler = new ContextCompiler(); // 实例化 ContextCompiler
+
 
 // 定义 CLI 的基本信息
 program
@@ -128,9 +130,25 @@ program
     ];
 
     console.log('LlamaCLI is thinking...');
+    let inThinkBlock = false; // 标记是否在思考块内部
     try {
       for await (const chunk of llmAdapter.chatStream(messages)) {
-        process.stdout.write(chunk); // 流式打印 LLM 响应
+        // 检查是否进入或退出思考块
+        if (chunk.includes('<think>')) {
+          inThinkBlock = true;
+          // 移除 <think> 标签，只处理其后的内容
+          const content = chunk.replace('<think>', '');
+          process.stdout.write(chalk.grey(content));
+        } else if (chunk.includes('</think>')) {
+          inThinkBlock = false;
+          // 移除 </think> 标签，只处理其前的内容
+          const content = chunk.replace('</think>', '');
+          process.stdout.write(chalk.grey(content));
+        } else if (inThinkBlock) {
+          process.stdout.write(chalk.grey(chunk)); // 思考块内部内容以灰色显示
+        } else {
+          process.stdout.write(chunk); // 正常内容
+        }
       }
       process.stdout.write('\n'); // 确保最后换行
     } catch (error) {
