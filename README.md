@@ -2,9 +2,9 @@
 
 **一个为开发者打造的、数据安全且高度可扩展的 AI 命令行开发伙伴。**
 
-[![NPM 版本](https://img.shields.io/npm/v/llamacli.svg)](https://www.npmjs.com/package/llamacli)
-[![构建状态](https://img.shields.io/github/actions/workflow/status/HaochenFa/llamacli/ci.yml?branch=main)](https://github.com/HaochenFa/llamacli/actions)
-[![许可证](https://img.shields.io/npm/l/llamacli.svg)](https://github.com/HaochenFa/llamacli/blob/main/LICENSE)
+[![NPM 版本](https://img.shields.io/npm/v/Llama-Cli.svg)](https://www.npmjs.com/package/Llama-Cli)
+[![构建状态](https://img.shields.io/github/actions/workflow/status/HaochenFa/Llama-Cli/ci.yml?branch=main)](https://github.com/HaochenFa/Llama-Cli/actions)
+[![许可证](https://img.shields.io/npm/l/Llama-cli.svg)](https://github.com/HaochenFa/Llama-Cli/blob/main/LICENSE)
 
 ## 项目简介
 
