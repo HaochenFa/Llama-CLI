@@ -25,3 +25,6 @@ tmp/
 
 # macOS
 .DS_Store
+
+# Gemini CLI
+/GEMINI.md
