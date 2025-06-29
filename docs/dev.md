@@ -24,8 +24,8 @@ LlamaCLI采用一种结合了Agentic Loop、结构化内部上下文、上下文
 interface ToolDefinition {
 type: 'native' | 'openapi' | 'mcp';
 name: string;
-description: string;
-schema: any; // e.g., OpenAPI Schema for arguments
+description: string; // 工具的描述
+schema: any; // 工具的参数定义，对于 'openapi' 类型，这里是 OpenAPI Schema
 endpoint?: string; // for openapi & mcp tools
 }
 
@@ -105,7 +105,8 @@ chat_history: ChatMessage[];
 
 - 工具调度器 (`tool-dispatcher.ts`): 当LLM请求调用工具时，调度器根据`InternalContext.available_tools`中定义的工具type来执行：
     - `native`: 调用本地TypeScript函数（例如文件操作）。
-    - `mcp`: 构造并发送MCP协议的JSON对象。
+- `mcp`: 构造并发送MCP协议的JSON对象。
+- `openapi`: 调用符合 OpenAPI 规范的外部 RESTful API。调度器会根据 `ToolDefinition.schema` 中定义的 OpenAPI 规范，构造并发送 HTTP 请求到 `ToolDefinition.endpoint`。这使得 LlamaCLI 能够与广泛的现有 Web 服务生态系统集成。
 - 内置工具 (`tools/`):
     - 文件系统: `searchFiles`, `readFile`, `writeFile`, `deleteFile`。
     - 互联网搜索: `webSearch`。
