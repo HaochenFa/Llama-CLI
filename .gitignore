@@ -1,11 +1,27 @@
-/tmp
-/out-tsc
+# Dependency directories
+node_modules/
 
-/node_modules
+# Build output
+dist/
+out-tsc/
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-/.pnp
+
+# Runtime data
+tmp/
+.pnp
 .pnp.js
 
-.vscode/*
+# Environment variables
+.env*
+
+# IDE directories
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
