@@ -1,6 +1,6 @@
 // src/lib/context-compiler.ts
 
-import {InternalContext, ChatMessage, FileContext, ToolDefinition} from '../types/context.js';
+import { InternalContext, ChatMessage, FileContext, ToolDefinition } from '../types/context.js';
 
 /**
  * 上下文编译器，负责将 InternalContext 压平为 LLM 的系统提示。
@@ -39,6 +39,14 @@ export class ContextCompiler {
         systemPrompt += '\n';
       });
       systemPrompt += '\n';
+
+      // START: Added to guide LLM to use tools
+      // 引导 LLM 生成工具调用指令。后续需要评估这种提示方式的效果和通用性。
+      systemPrompt += '## Tool Usage Instructions:\n';
+      systemPrompt += 'IMPORTANT: When you need to use a tool, you MUST respond with a JSON object inside <tool_code> tags. Do NOT respond with natural language if a tool is required.\n';
+      systemPrompt += 'The JSON object MUST have "name" (string) and "arguments" (object) properties.\n';
+      systemPrompt += 'Example for the "echo" tool: <tool_code>{"name": "echo", "arguments": {"message": "your message here"}}</tool_code>\n\n';
+      // END: Added to guide LLM to use tools
     }
 
     // 3. 添加文件上下文

@@ -1,6 +1,6 @@
 // src/lib/adapters/base.adapter.ts
 
-import {ChatMessage} from '../../types/context.js';
+import {ChatMessage, ToolDefinition} from '../../types/context.js';
 
 /**
  * LLMAdapter 接口定义了与大型语言模型交互的通用契约。
@@ -12,5 +12,5 @@ export interface LLMAdapter {
    * @param messages 聊天消息数组，包含对话历史。
    * @returns 一个异步可迭代对象，每次迭代返回 LLM 生成的文本片段。
    */
-  chatStream(messages: ChatMessage[]): AsyncIterable<string>;
+  chatStream(messages: ChatMessage[], tools?: ToolDefinition[]): AsyncIterable<string>;
 }

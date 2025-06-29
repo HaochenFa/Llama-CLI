@@ -2,7 +2,7 @@
 
 import axios, {AxiosResponse} from 'axios';
 import {LLMAdapter} from './base.adapter.js';
-import {ChatMessage} from '../../types/context.js';
+import {ChatMessage, ToolDefinition} from '../../types/context.js'; // 导入 ToolDefinition
 
 /**
  * OllamaAdapter 实现了 LLMAdapter 接口，用于与 Ollama 后端进行交互。
@@ -20,15 +20,27 @@ export class OllamaAdapter implements LLMAdapter {
    * @param messages 聊天消息数组，包含对话历史。
    * @returns 一个异步可迭代对象，每次迭代返回 LLM 生成的文本片段。
    */
-  public async* chatStream(messages: ChatMessage[]): AsyncIterable<string> {
+  public async* chatStream(messages: ChatMessage[], tools?: ToolDefinition[]): AsyncIterable<string> {
     try {
       const payload = {
         model: 'qwen3:0.6b', // 默认使用 qwen3:0.6b 模型，方便本地测试
         messages: messages.map(msg => ({
           role: msg.role,
           content: msg.content,
+          // Ollama API 期望工具调用消息的 content 为 null
+          ...(msg.role === 'tool' && {content: null}),
         })),
         stream: true,
+        ...(tools && tools.length > 0 && {
+          tools: tools.map(tool => ({
+            type: tool.type,
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.schema,
+            },
+          }))
+        }),
       };
 
       const response: AxiosResponse = await axios.post(
@@ -52,8 +64,14 @@ export class OllamaAdapter implements LLMAdapter {
           if (line) {
             try {
               const data = JSON.parse(line);
-              if (data.done === false && data.message?.content) {
-                yield data.message.content;
+              if (data.done === false) {
+                if (data.message?.content) {
+                  yield data.message.content;
+                }
+                if (data.message?.tool_calls && data.message.tool_calls.length > 0) {
+                  // 将工具调用信息封装在 <tool_code> 标签中
+                  yield `<tool_code>${JSON.stringify(data.message.tool_calls[0].function)}</tool_code>`;
+                }
               } else if (data.done === true) {
                 // 结束标志，可以处理最终的统计信息等
                 break; // 退出循环
