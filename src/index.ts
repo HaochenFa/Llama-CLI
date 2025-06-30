@@ -1,25 +1,23 @@
 import {Command} from 'commander';
 import {ConfigStore, LLMProfile} from './lib/config-store.js';
-import {ContextCompiler} from './lib/context-compiler.js'; // 引入 ContextCompiler
-import {OllamaAdapter} from './lib/adapters/ollama.adapter.js'; // 引入 OllamaAdapter
-import {ToolDispatcher} from './lib/tool-dispatcher.js'; // 引入 ToolDispatcher
-import inquirer from 'inquirer'; // 引入 inquirer
-import {InternalContext, ChatMessage} from './types/context.js'; // 引入 InternalContext 和 ChatMessage
-import chalk from 'chalk'; // 引入 chalk 库
+import {ContextCompiler} from './lib/context-compiler.js';
+import {OllamaAdapter} from './lib/adapters/ollama.adapter.js';
+import {ToolDispatcher} from './lib/tool-dispatcher.js';
+import inquirer from 'inquirer';
+import {InternalContext, ChatMessage, ToolCallPayload, ToolCall} from './types/context.js';
+import chalk from 'chalk';
+import * as crypto from 'crypto';
 
 const program = new Command();
 const configStore = new ConfigStore();
-const contextCompiler = new ContextCompiler(); // 实例化 ContextCompiler
-const toolDispatcher = new ToolDispatcher([]); // 实例化 ToolDispatcher，初始工具列表为空
+const contextCompiler = new ContextCompiler();
+const toolDispatcher = new ToolDispatcher([]);
 
-
-// 定义 CLI 的基本信息
 program
   .name('llama-cli')
   .description('LlamaCLI - Your AI-powered development companion.')
-  .version('0.0.1'); // 初始版本号
+  .version('0.0.1');
 
-// 定义 'config' 命令
 program
   .command('config')
   .description('Manage LLM backend configurations.')
@@ -51,7 +49,6 @@ program
         const newProfile: LLMProfile = {name, type, endpoint};
         configStore.setProfile(newProfile);
         console.log(`Profile "${name}" added successfully.`);
-        // 首次添加后自动设置为当前 profile
         if (!configStore.getCurrentProfile()) {
           configStore.setCurrentProfile(name);
           console.log(`Profile "${name}" set as current profile.`);
@@ -77,7 +74,6 @@ program
       .action((name: string) => {
         if (configStore.deleteProfile(name)) {
           console.log(`Profile "${name}" removed successfully.`);
-          // 如果删除的是当前 profile，则清空当前 profile 设置
           if (configStore.getCurrentProfile()?.name === name) {
             const config = configStore.readConfig();
             delete config.currentProfile;
@@ -90,12 +86,12 @@ program
       })
   );
 
-// 定义 'chat' 命令
 program
   .command('chat')
   .description('Start an interactive chat session with the LLM.')
   .argument('<prompt>', 'Your message to the LLM.')
-  .action(async (prompt: string) => {
+  .option('--debug', 'Enable debug logging for LLM interactions', false)
+  .action(async (prompt: string, options: { debug: boolean }) => {
     const currentProfile = configStore.getCurrentProfile();
     if (!currentProfile) {
       console.error('Error: No LLM profile is currently active. Please use "llama-cli config add" to add a profile and "llama-cli config use" to set it as current.');
@@ -105,7 +101,7 @@ program
     let llmAdapter;
     switch (currentProfile.type) {
       case 'ollama':
-        llmAdapter = new OllamaAdapter(currentProfile.endpoint);
+        llmAdapter = new OllamaAdapter(currentProfile.endpoint, options.debug);
         break;
       case 'vllm':
         console.error('Error: vLLM adapter is not yet implemented.');
@@ -115,98 +111,85 @@ program
         return;
     }
 
-    // 示例：添加一个 native 工具到 ToolDispatcher
-    toolDispatcher.availableTools.push({
-      type: 'native',
-      name: 'echo',
-      description: 'Echoes a message back.',
-      schema: {type: 'object', properties: {message: {type: 'string'}}}
-    });
-
-    // 构造一个简单的 InternalContext
     const internalContext: InternalContext = {
       long_term_memory: [],
-      available_tools: [],
+      available_tools: toolDispatcher.availableTools,
       file_context: [],
-      chat_history: [], // 初始聊天历史为空
+      chat_history: [],
     };
 
-    // 生成系统提示
     const systemPrompt = contextCompiler.compile(internalContext);
 
-    // 构造聊天消息
     let messages: ChatMessage[] = [
       {role: 'system', content: systemPrompt},
       {role: 'user', content: prompt},
     ];
 
-    // Agentic Loop
-    let currentMessages = [...messages]; // 复制消息数组，以便在循环中修改
+    let currentMessages = [...messages];
     let loopCount = 0;
-    const MAX_LOOP_COUNT = 5; // 防止无限循环，可以根据需要调整
+    const MAX_LOOP_COUNT = 10;
 
     while (loopCount < MAX_LOOP_COUNT) {
-      console.log('LlamaCLI is thinking...');
-      let inThinkBlock = false; // 标记是否在思考块内部
-      let fullResponse = ''; // 收集完整的 LLM 响应
+      console.log(chalk.blue('LlamaCLI is thinking...'));
+      let assistantResponseContent = '';
+      let toolCallPayload: ToolCallPayload | null = null;
 
       try {
-        for await (const chunk of llmAdapter.chatStream(currentMessages, internalContext.available_tools)) { // 传递 available_tools
-          fullResponse += chunk; // 收集所有 chunk
-          // 检查是否进入或退出思考块
-          if (chunk.includes('<think>')) {
-            inThinkBlock = true;
-            const content = chunk.replace('<think>', '');
-            process.stdout.write(chalk.grey(content));
-          } else if (chunk.includes('</think>')) {
-            inThinkBlock = false;
-            const content = chunk.replace('</think>', '');
-            process.stdout.write(chalk.grey(content));
-          } else if (inThinkBlock) {
-            process.stdout.write(chalk.grey(chunk));
-          } else {
+        for await (const chunk of llmAdapter.chatStream(currentMessages, internalContext.available_tools)) {
+          if (typeof chunk === 'string') {
+            assistantResponseContent += chunk;
             process.stdout.write(chunk);
+          } else if (typeof chunk === 'object' && chunk.type === 'tool_calls') {
+            toolCallPayload = chunk;
           }
         }
-        process.stdout.write('\n'); // 确保最后换行
+        process.stdout.write('\n');
 
-        // 检查 LLM 响应是否包含工具调用指令
-        const toolCallMatch = fullResponse.match(/<tool_code>(.*?)<\/tool_code>/s);
-        if (toolCallMatch && toolCallMatch[1]) {
-          const toolCallString = toolCallMatch[1];
-          console.log(chalk.yellow(`\nTool call detected: ${toolCallString}`));
-          try {
-            const toolCall = JSON.parse(toolCallString);
-            const toolResult = await toolDispatcher.dispatch(toolCall);
-            console.log(chalk.green(`Tool result: ${toolResult.content}`));
-            currentMessages.push({role: 'assistant', content: fullResponse}); // 将 LLM 的响应（包含工具调用）添加到历史
-            currentMessages.push(toolResult); // 将工具结果添加到历史
-            loopCount++; // 增加循环计数
-            continue; // 继续 Agentic Loop
-          } catch (parseError) {
-            console.error(chalk.red(`Error parsing tool call JSON: ${(parseError as Error).message}`));
-            currentMessages.push({role: 'assistant', content: fullResponse}); // 将 LLM 的响应添加到历史
-            currentMessages.push({
-              role: 'tool',
-              content: `Error parsing tool call JSON: ${(parseError as Error).message}`
-            });
-            break; // 退出循环
-          }
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: assistantResponseContent,
+        };
+
+        if (toolCallPayload) {
+          // Assign a client-side ID if the backend didn't provide one
+          toolCallPayload.tool_calls.forEach(tc => {
+            if (!tc.id) {
+              tc.id = `call_${crypto.randomUUID()}`;
+            }
+          });
+          assistantMessage.tool_calls = toolCallPayload.tool_calls;
+        }
+
+        currentMessages.push(assistantMessage);
+
+        if (toolCallPayload) {
+          console.log(chalk.yellow(`\nTool calls detected: ${toolCallPayload.tool_calls.map(t => t.function.name).join(', ')}`));
+
+          const toolPromises = toolCallPayload.tool_calls.map(toolCall => {
+            // The arguments are already an object, no need to parse
+            return toolDispatcher.dispatch({ name: toolCall.function.name, arguments: toolCall.function.arguments }, toolCall.id!);;
+          });
+
+          const toolResults = await Promise.all(toolPromises);
+
+          toolResults.forEach(toolResult => {
+            console.log(chalk.green(`Tool result for ${toolResult.tool_call_id}: ${toolResult.content}`));
+            currentMessages.push(toolResult);
+          });
+
+          loopCount++;
+          continue;
         } else {
-          // 如果没有工具调用，则 LLM 提供了最终答案
-          currentMessages.push({role: 'assistant', content: fullResponse}); // 将 LLM 的响应添加到历史
-          break; // 退出循环
+          break;
         }
       } catch (error) {
         console.error('\nError during chat session:', (error as Error).message);
-        break; // 退出循环
+        break;
       }
     }
   });
 
-// 在解析命令行参数之前，检查并处理首次运行/配置向导
 async function runCli() {
-  // 如果没有指定任何命令，并且没有激活的 profile，则启动配置向导
   if (process.argv.slice(2).length === 0 && !configStore.getCurrentProfile()) {
     console.log(chalk.bold('Welcome to LlamaCLI! It looks like you\'re new here. Let\'s set up your first LLM connection.'));
 
@@ -221,7 +204,7 @@ async function runCli() {
         type: 'list',
         name: 'llmType',
         message: 'Select the type of your LLM:',
-        choices: ['ollama', 'vllm'], // 暂时只支持这两种
+        choices: ['ollama', 'vllm'],
         default: 'ollama',
       },
       {
@@ -243,10 +226,9 @@ async function runCli() {
 
     console.log(chalk.green(`\nProfile "${newProfile.name}" created and set as current.`));
     console.log('You can now start chatting with your LLM. Try: llama-cli chat "Hello!"');
-    return; // 配置完成后退出
+    return;
   }
 
-  // 解析命令行参数
   program.parse(process.argv);
 }
 
