@@ -5,18 +5,21 @@ import * as path from 'path';
 export const read_file_tool: ToolDefinition = {
   type: 'native',
   name: 'read_file',
-  description: 'Reads and returns the content of a specified text file from the local filesystem. For text files, it can read specific line ranges.',
+  description: 'Reads and returns the content of a specified text file from the local filesystem. The file path must be an absolute path.',
   parameters: {
     type: 'object',
     properties: {
       absolute_path: {
         type: 'string',
+        description: "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported.",
       },
       limit: {
         type: 'number',
+        description: "Optional: Maximum number of lines to read. Use with 'offset' to paginate.",
       },
       offset: {
         type: 'number',
+        description: "Optional: The 0-based line number to start reading from. Requires 'limit'.",
       },
     },
     required: ['absolute_path'],

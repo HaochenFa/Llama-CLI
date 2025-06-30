@@ -64,7 +64,7 @@ export interface InternalContext {
   available_tools: ToolDefinition[]; // 当前可用的工具列表
   file_context: FileContext[]; // 加载到上下文中的文件列表
   chat_history: ChatMessage[]; // 聊天历史记录
+  current_working_directory: string; // The current working directory of the user.
   // 可以在后续根据需求添加更多上下文信息，例如：
-  // current_working_directory: string;
   // active_llm_profile: string;
 }

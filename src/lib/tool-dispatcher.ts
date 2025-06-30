@@ -4,6 +4,9 @@ import { ToolDefinition, ChatMessage } from '../types/context.js';
 import { echo_tool } from './tools/echo.js';
 import { read_file_tool } from './tools/read_file.js';
 import { write_file_tool } from './tools/write_file.js';
+import Ajv from 'ajv';
+
+const ajv = new Ajv();
 
 /**
  * ToolDispatcher 负责根据 LLM 的指令调度和执行工具。
@@ -36,6 +39,19 @@ export class ToolDispatcher {
         tool_call_id,
         content: `Error: Tool '${toolCall.name}' not found.`,
       };
+    }
+
+    // Validate arguments against the tool's schema
+    const schema = tool.parameters || tool.schema;
+    if (schema) {
+      const validate = ajv.compile(schema);
+      if (!validate(toolCall.arguments)) {
+        return {
+          role: 'tool',
+          tool_call_id,
+          content: `Error: Invalid arguments for tool '${toolCall.name}'. Details: ${ajv.errorsText(validate.errors)}`,
+        };
+      }
     }
 
     switch (tool.type) {

@@ -12,7 +12,9 @@ export class ContextCompiler {
    * @returns 编译后的系统提示字符串。
    */
   public compile(context: InternalContext): string {
-    let systemPrompt = '';
+    let systemPrompt = '## Environment Context\n';
+    systemPrompt += `You are operating in the following directory: ${context.current_working_directory}\n`;
+    systemPrompt += "When using tools that require file paths (like 'read_file' or 'write_file'), you MUST use absolute paths. If the user provides a relative path, you must resolve it based on the current working directory shown above. For example, if the user says 'read file.txt', you must call the tool with the argument '{ \"absolute_path\": \"${context.current_working_directory}/file.txt\" }'.\n\n";
 
     // 1. 添加长期记忆
     if (context.long_term_memory && context.long_term_memory.length > 0) {

@@ -116,6 +116,7 @@ program
       available_tools: toolDispatcher.availableTools,
       file_context: [],
       chat_history: [],
+      current_working_directory: process.cwd(), // Dynamically get the current working directory
     };
 
     const systemPrompt = contextCompiler.compile(internalContext);
