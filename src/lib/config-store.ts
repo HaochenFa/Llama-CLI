@@ -7,7 +7,12 @@ export interface LLMProfile {
   type: 'ollama' | 'vllm';
   name: string;
   endpoint: string;
-  // 可以在后续添加更多配置项，例如 API Key 等
+  model?: string; // 可选的模型名称
+  apiKey?: string; // 可选的API密钥
+  timeout?: number; // 可选的超时设置（毫秒）
+  maxTokens?: number; // 可选的最大token数
+  temperature?: number; // 可选的温度设置
+  // 可以在后续添加更多配置项
 }
 
 export interface LlamaCLIConfig {

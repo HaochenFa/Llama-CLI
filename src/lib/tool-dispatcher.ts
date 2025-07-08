@@ -1,9 +1,12 @@
 // src/lib/tool-dispatcher.ts
 
 import { ToolDefinition, ChatMessage } from '../types/context.js';
-import { echo_tool } from './tools/echo.js';
-import { read_file_tool } from './tools/read_file.js';
-import { write_file_tool } from './tools/write_file.js';
+import { read_file_tool } from './tools/read_file';
+import { write_file_tool } from './tools/write_file';
+import { search_files_tool } from './tools/search_files';
+import { delete_file_tool } from './tools/delete_file';
+import { web_search_tool } from './tools/web_search';
+import { mcp_manager_tool, getMcpManager, getMcpToolAdapter } from './tools/mcp_manager';
 import Ajv from 'ajv';
 
 const ajv = new Ajv();
@@ -13,15 +16,66 @@ const ajv = new Ajv();
  */
 export class ToolDispatcher {
   public availableTools: ToolDefinition[];
+  private nativeTools: ToolDefinition[];
+  private mcpToolsLoaded: boolean = false;
 
   constructor(tools: ToolDefinition[]) {
     // 注册所有可用的 native 工具
-    this.availableTools = [
-      echo_tool,
+    this.nativeTools = [
       read_file_tool,
       write_file_tool,
+      search_files_tool,
+      delete_file_tool,
+      web_search_tool,
+      mcp_manager_tool,
+    ];
+
+    this.availableTools = [
+      ...this.nativeTools,
       ...tools.filter(t => t.type !== 'native') // 过滤掉传入的 native 工具，因为我们已经手动注册了
     ];
+  }
+
+  /**
+   * Load MCP tools from connected servers and add them to available tools
+   */
+  public async loadMcpTools(): Promise<void> {
+    try {
+      const mcpToolAdapter = getMcpToolAdapter();
+      if (mcpToolAdapter) {
+        const mcpTools = await mcpToolAdapter.getToolDefinitions();
+
+        // Remove existing MCP tools and add new ones
+        this.availableTools = this.availableTools.filter(t => t.type !== 'mcp');
+        this.availableTools.push(...mcpTools);
+
+        this.mcpToolsLoaded = true;
+        console.log(`Loaded ${mcpTools.length} MCP tools`);
+      }
+    } catch (error) {
+      console.error('Failed to load MCP tools:', error);
+    }
+  }
+
+  /**
+   * Refresh all tools including MCP tools
+   */
+  public async refreshTools(): Promise<void> {
+    await this.loadMcpTools();
+  }
+
+  /**
+   * Get the count of available tools by type
+   */
+  public getToolStats(): { native: number; mcp: number; total: number } {
+    const nativeCount = this.availableTools.filter(t => t.type === 'native').length;
+    const mcpCount = this.availableTools.filter(t => t.type === 'mcp').length;
+
+    return {
+      native: nativeCount,
+      mcp: mcpCount,
+      total: this.availableTools.length
+    };
   }
 
   /**
@@ -41,11 +95,25 @@ export class ToolDispatcher {
       };
     }
 
+    // Parse string arguments if needed
+    let parsedArguments = toolCall.arguments;
+    if (typeof toolCall.arguments === 'string') {
+      try {
+        parsedArguments = JSON.parse(toolCall.arguments);
+      } catch (error) {
+        return {
+          role: 'tool',
+          tool_call_id,
+          content: `Error: Invalid JSON in arguments for tool '${toolCall.name}': ${(error as Error).message}`,
+        };
+      }
+    }
+
     // Validate arguments against the tool's schema
     const schema = tool.parameters || tool.schema;
     if (schema) {
       const validate = ajv.compile(schema);
-      if (!validate(toolCall.arguments)) {
+      if (!validate(parsedArguments)) {
         return {
           role: 'tool',
           tool_call_id,
@@ -58,7 +126,7 @@ export class ToolDispatcher {
       case 'native':
         if (tool.invoke) {
           try {
-            const result = await tool.invoke(toolCall.arguments);
+            const result = await tool.invoke(parsedArguments);
             return {
               role: 'tool',
               tool_call_id,
@@ -85,11 +153,28 @@ export class ToolDispatcher {
           content: `Error: OpenAPI tool '${tool.name}' not yet implemented.`,
         };
       case 'mcp':
-        return {
-          role: 'tool',
-          tool_call_id,
-          content: `Error: MCP tool '${tool.name}' not yet implemented.`,
-        };
+        if (tool.invoke) {
+          try {
+            const result = await tool.invoke(parsedArguments);
+            return {
+              role: 'tool',
+              tool_call_id,
+              content: typeof result === 'string' ? result : JSON.stringify(result),
+            };
+          } catch (error: any) {
+            return {
+              role: 'tool',
+              tool_call_id,
+              content: `Error executing MCP tool '${tool.name}': ${(error as Error).message}`,
+            };
+          }
+        } else {
+          return {
+            role: 'tool',
+            tool_call_id,
+            content: `Error: MCP tool '${tool.name}' has no invoke method.`,
+          };
+        }
       default:
         return {
           role: 'tool',
