@@ -28,10 +28,10 @@ export const write_file_tool: ToolDefinition = {
     }
 
     try {
-      await fs.writeFile(file_path, content, {encoding: 'utf-8'});
+      await fs.writeFile(file_path, content, { encoding: 'utf-8' });
       return `Successfully wrote to file: ${file_path}`;
     } catch (error: any) {
-      return `Error writing to file ${file_path}: ${(error as Error).message}`;
+      throw new Error(`Error writing to file ${file_path}: ${(error as Error).message}`);
     }
   },
 };
