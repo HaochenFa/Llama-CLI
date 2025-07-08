@@ -1,8 +1,7 @@
 // src/lib/adapters/ollama.adapter.ts
 
 import axios, {AxiosResponse} from 'axios';
-import {LLMAdapter} from './base.adapter.js';
-import {ChatMessage, ToolDefinition} from '../../types/context.js'; // 导入 ToolDefinition
+import {ChatMessage, ToolCallPayload, ToolDefinition} from '../../types/context.js'; // 导入 ToolDefinition
 
 /**
  * OllamaAdapter 实现了 LLMAdapter 接口，用于与 Ollama 后端进行交互。
@@ -10,20 +9,22 @@ import {ChatMessage, ToolDefinition} from '../../types/context.js'; // 导入 To
  */
 export class OllamaAdapter implements LLMAdapter {
   private ollamaEndpoint: string;
+  private debug: boolean;
 
-  constructor(endpoint: string) {
+  constructor(endpoint: string, debug: boolean = false) {
     this.ollamaEndpoint = endpoint;
+    this.debug = debug;
   }
 
   /**
    * 以流式方式与 Ollama LLM 进行聊天交互。
    * @param messages 聊天消息数组，包含对话历史。
-   * @returns 一个异步可迭代对象，每次迭代返回 LLM 生成的文本片段。
+   * @returns 一个异步可迭代对象，每次迭代返回 LLM 生成的文本片段或工具调用负载。
    */
-  public async* chatStream(messages: ChatMessage[], tools?: ToolDefinition[]): AsyncIterable<string> {
+  public async* chatStream(messages: ChatMessage[], tools?: ToolDefinition[]): AsyncIterable<string | ToolCallPayload> {
     try {
       const payload = {
-        model: 'qwen3:0.6b', // 默认使用 qwen3:0.6b 模型，方便本地测试
+        model: 'llama3.2:3b', // 默认使用 deepseek-r1:8b-0528-qwen3-q4_K_M 模型
         messages: messages.map(msg => ({
           role: msg.role,
           content: msg.content,
@@ -33,15 +34,19 @@ export class OllamaAdapter implements LLMAdapter {
         stream: true,
         ...(tools && tools.length > 0 && {
           tools: tools.map(tool => ({
-            type: tool.type,
+            type: 'function', // Ollama API 期望工具类型为 'function'
             function: {
               name: tool.name,
               description: tool.description,
-              parameters: tool.schema,
+              parameters: tool.parameters || tool.schema,
             },
           }))
         }),
       };
+
+      if (this.debug) {
+        console.log('Ollama Request Payload:', JSON.stringify(payload, null, 2));
+      }
 
       const response: AxiosResponse = await axios.post(
         `${this.ollamaEndpoint}/api/chat`,
@@ -64,13 +69,15 @@ export class OllamaAdapter implements LLMAdapter {
           if (line) {
             try {
               const data = JSON.parse(line);
+              if (this.debug) {
+                console.log('Ollama Raw Data:', JSON.stringify(data, null, 2));
+              }
               if (data.done === false) {
                 if (data.message?.content) {
                   yield data.message.content;
                 }
                 if (data.message?.tool_calls && data.message.tool_calls.length > 0) {
-                  // 将工具调用信息封装在 <tool_code> 标签中
-                  yield `<tool_code>${JSON.stringify(data.message.tool_calls[0].function)}</tool_code>`;
+                  yield { type: 'tool_calls', tool_calls: data.message.tool_calls };
                 }
               } else if (data.done === true) {
                 // 结束标志，可以处理最终的统计信息等
@@ -88,4 +95,5 @@ export class OllamaAdapter implements LLMAdapter {
       throw new Error(`Failed to connect to Ollama: ${(error as Error).message}`);
     }
   }
+
 }
