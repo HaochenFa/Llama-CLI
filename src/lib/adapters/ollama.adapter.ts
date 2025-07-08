@@ -2,6 +2,7 @@
 
 import axios, {AxiosResponse} from 'axios';
 import {ChatMessage, ToolCallPayload, ToolDefinition} from '../../types/context.js'; // 导入 ToolDefinition
+import {LLMAdapter} from './base.adapter.js';
 
 /**
  * OllamaAdapter 实现了 LLMAdapter 接口，用于与 Ollama 后端进行交互。
@@ -93,6 +94,50 @@ export class OllamaAdapter implements LLMAdapter {
     } catch (error) {
       console.error('Error communicating with Ollama API:', (error as Error).message);
       throw new Error(`Failed to connect to Ollama: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * 测试与 Ollama 后端的连接。
+   * @returns Promise<boolean> 连接是否成功
+   */
+  public async testConnection(): Promise<{ success: boolean; error?: string; models?: string[] }> {
+    try {
+      // 尝试获取可用模型列表来测试连接
+      const response = await axios.get(`${this.ollamaEndpoint}/api/tags`, {
+        timeout: 10000, // 10 second timeout
+      });
+
+      if (response.status === 200 && response.data && response.data.models) {
+        const models = response.data.models.map((model: any) => model.name);
+        return {
+          success: true,
+          models: models.length > 0 ? models : ['No models found']
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Invalid response from Ollama API'
+        };
+      }
+    } catch (error) {
+      const axiosError = error as any;
+      if (axiosError.code === 'ECONNREFUSED') {
+        return {
+          success: false,
+          error: 'Connection refused - is Ollama running?'
+        };
+      } else if (axiosError.code === 'ETIMEDOUT') {
+        return {
+          success: false,
+          error: 'Connection timeout - check your endpoint URL'
+        };
+      } else {
+        return {
+          success: false,
+          error: axiosError.message || 'Unknown connection error'
+        };
+      }
     }
   }
 
