@@ -25,22 +25,22 @@ afterEach(() => {
 export const mockLLMResponse = (responses: string[]) => {
   let responseIndex = 0;
   return {
-    async* chatStream() {
+    async *chatStream() {
       for (const response of responses) {
         yield response;
       }
     },
     async testConnection() {
-      return { success: true, models: ['test-model'] };
-    }
+      return { success: true, models: ["test-model"] };
+    },
   };
 };
 
 export const createMockProfile = (overrides = {}) => ({
-  name: 'test-profile',
-  type: 'ollama' as const,
-  endpoint: 'http://localhost:11434',
-  ...overrides
+  name: "test-profile",
+  type: "ollama" as const,
+  endpoint: "http://localhost:11434",
+  ...overrides,
 });
 
 export const createMockContext = (overrides = {}) => ({
@@ -48,6 +48,6 @@ export const createMockContext = (overrides = {}) => ({
   available_tools: [],
   file_context: [],
   chat_history: [],
-  current_working_directory: '/test',
-  ...overrides
+  current_working_directory: "/test",
+  ...overrides,
 });
