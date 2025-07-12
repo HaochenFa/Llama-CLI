@@ -1,8 +1,8 @@
 // src/lib/adapters/vllm.adapter.ts
 
-import axios, { AxiosResponse } from 'axios';
-import { ChatMessage, ToolCallPayload, ToolDefinition } from '../../types/context.js';
-import { LLMAdapter } from './base.adapter.js';
+import axios, { AxiosResponse } from "axios";
+import { ChatMessage, ToolCallPayload, ToolDefinition } from "../../types/context.js";
+import { LLMAdapter } from "./base.adapter.js";
 
 /**
  * vLLMAdapter 实现了 LLMAdapter 接口，用于与 vLLM 后端进行交互。
@@ -13,7 +13,7 @@ export class vLLMAdapter implements LLMAdapter {
   private debug: boolean;
   private model: string;
 
-  constructor(endpoint: string, debug: boolean = false, model: string = 'default') {
+  constructor(endpoint: string, debug: boolean = false, model: string = "default") {
     this.vllmEndpoint = endpoint;
     this.debug = debug;
     this.model = model;
@@ -25,37 +25,40 @@ export class vLLMAdapter implements LLMAdapter {
    * @param tools 可用的工具定义数组。
    * @returns 一个异步可迭代对象，每次迭代返回 LLM 生成的文本片段或工具调用负载。
    */
-  public async* chatStream(messages: ChatMessage[], tools?: ToolDefinition[]): AsyncIterable<string | ToolCallPayload> {
+  public async *chatStream(
+    messages: ChatMessage[],
+    tools?: ToolDefinition[]
+  ): AsyncIterable<string | ToolCallPayload> {
     try {
       // 构建 OpenAI 兼容的请求负载
       const payload: any = {
         model: this.model,
-        messages: messages.map(msg => ({
+        messages: messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
           ...(msg.tool_calls && { tool_calls: msg.tool_calls }),
-          ...(msg.tool_call_id && { tool_call_id: msg.tool_call_id })
+          ...(msg.tool_call_id && { tool_call_id: msg.tool_call_id }),
         })),
         stream: true,
         temperature: 0.7,
-        max_tokens: 4096
+        max_tokens: 4096,
       };
 
       // 添加工具定义（如果提供）
       if (tools && tools.length > 0) {
-        payload.tools = tools.map(tool => ({
-          type: 'function',
+        payload.tools = tools.map((tool) => ({
+          type: "function",
           function: {
             name: tool.name,
             description: tool.description,
             parameters: tool.parameters || tool.schema,
           },
         }));
-        payload.tool_choice = 'auto'; // 让模型自动决定是否使用工具
+        payload.tool_choice = "auto"; // 让模型自动决定是否使用工具
       }
 
       if (this.debug) {
-        console.log('vLLM Request Payload:', JSON.stringify(payload, null, 2));
+        console.log("vLLM Request Payload:", JSON.stringify(payload, null, 2));
       }
 
       // 发送请求到 vLLM 的 OpenAI 兼容端点
@@ -63,38 +66,38 @@ export class vLLMAdapter implements LLMAdapter {
         `${this.vllmEndpoint}/v1/chat/completions`,
         payload,
         {
-          responseType: 'stream',
+          responseType: "stream",
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'text/event-stream'
-          }
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+          },
         }
       );
 
       const reader = response.data;
-      let buffer = '';
+      let buffer = "";
 
       for await (const chunk of reader) {
         buffer += chunk.toString();
         let newlineIndex;
-        
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
           const line = buffer.substring(0, newlineIndex).trim();
           buffer = buffer.substring(newlineIndex + 1);
 
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             const dataStr = line.substring(6).trim();
-            
+
             // 检查是否为结束标志
-            if (dataStr === '[DONE]') {
+            if (dataStr === "[DONE]") {
               return;
             }
 
             try {
               const data = JSON.parse(dataStr);
-              
+
               if (this.debug) {
-                console.log('vLLM Raw Data:', JSON.stringify(data, null, 2));
+                console.log("vLLM Raw Data:", JSON.stringify(data, null, 2));
               }
 
               if (data.choices && data.choices.length > 0) {
@@ -111,27 +114,27 @@ export class vLLMAdapter implements LLMAdapter {
                   // vLLM 可能会分块发送工具调用，需要累积
                   const toolCalls = delta.tool_calls.map((tc: any) => ({
                     id: tc.id,
-                    type: tc.type || 'function',
+                    type: tc.type || "function",
                     function: {
                       name: tc.function?.name,
-                      arguments: tc.function?.arguments
-                    }
+                      arguments: tc.function?.arguments,
+                    },
                   }));
 
                   yield {
-                    type: 'tool_calls',
-                    tool_calls: toolCalls
+                    type: "tool_calls",
+                    tool_calls: toolCalls,
                   };
                 }
 
                 // 检查是否完成
-                if (choice.finish_reason === 'stop' || choice.finish_reason === 'tool_calls') {
+                if (choice.finish_reason === "stop" || choice.finish_reason === "tool_calls") {
                   return;
                 }
               }
             } catch (parseError) {
               if (this.debug) {
-                console.error('Error parsing vLLM stream chunk:', parseError);
+                console.error("Error parsing vLLM stream chunk:", parseError);
               }
               // 继续处理下一行
             }
@@ -139,7 +142,7 @@ export class vLLMAdapter implements LLMAdapter {
         }
       }
     } catch (error) {
-      console.error('Error communicating with vLLM API:', (error as Error).message);
+      console.error("Error communicating with vLLM API:", (error as Error).message);
       throw new Error(`Failed to connect to vLLM: ${(error as Error).message}`);
     }
   }
@@ -154,38 +157,38 @@ export class vLLMAdapter implements LLMAdapter {
       const response = await axios.get(`${this.vllmEndpoint}/v1/models`, {
         timeout: 10000, // 10 second timeout
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (response.status === 200 && response.data && response.data.data) {
         const models = response.data.data.map((model: any) => model.id);
-        return { 
-          success: true, 
-          models: models.length > 0 ? models : ['No models found'] 
+        return {
+          success: true,
+          models: models.length > 0 ? models : ["No models found"],
         };
       } else {
-        return { 
-          success: false, 
-          error: 'Invalid response from vLLM API' 
+        return {
+          success: false,
+          error: "Invalid response from vLLM API",
         };
       }
     } catch (error) {
       const axiosError = error as any;
-      if (axiosError.code === 'ECONNREFUSED') {
-        return { 
-          success: false, 
-          error: 'Connection refused - is vLLM running?' 
+      if (axiosError.code === "ECONNREFUSED") {
+        return {
+          success: false,
+          error: "Connection refused - is vLLM running?",
         };
-      } else if (axiosError.code === 'ETIMEDOUT') {
-        return { 
-          success: false, 
-          error: 'Connection timeout - check your endpoint URL' 
+      } else if (axiosError.code === "ETIMEDOUT") {
+        return {
+          success: false,
+          error: "Connection timeout - check your endpoint URL",
         };
       } else {
-        return { 
-          success: false, 
-          error: axiosError.message || 'Unknown connection error' 
+        return {
+          success: false,
+          error: axiosError.message || "Unknown connection error",
         };
       }
     }
@@ -200,17 +203,17 @@ export class vLLMAdapter implements LLMAdapter {
       const response = await axios.get(`${this.vllmEndpoint}/v1/models`, {
         timeout: 5000,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (response.status === 200 && response.data && response.data.data) {
         return response.data.data.map((model: any) => model.id);
       }
-      
+
       return [];
     } catch (error) {
-      console.error('Error fetching vLLM models:', (error as Error).message);
+      console.error("Error fetching vLLM models:", (error as Error).message);
       return [];
     }
   }
