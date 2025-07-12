@@ -1,10 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import {homedir} from 'os'; // 用于获取用户主目录
+import * as fs from "fs";
+import * as path from "path";
+import { homedir } from "os"; // 用于获取用户主目录
 
 // 定义配置文件的类型结构
 export interface LLMProfile {
-  type: 'ollama' | 'vllm';
+  type: "ollama" | "vllm" | "openai" | "anthropic" | "openai-compatible" | "gemini";
   name: string;
   endpoint: string;
   model?: string; // 可选的模型名称
@@ -12,6 +12,7 @@ export interface LLMProfile {
   timeout?: number; // 可选的超时设置（毫秒）
   maxTokens?: number; // 可选的最大token数
   temperature?: number; // 可选的温度设置
+  serviceName?: string; // 用于 openai-compatible 类型的服务名称
   // 可以在后续添加更多配置项
 }
 
@@ -26,8 +27,8 @@ export class ConfigStore {
   private configDir: string;
 
   constructor() {
-    this.configDir = path.join(homedir(), '.llama-cli');
-    this.configPath = path.join(this.configDir, 'config.json');
+    this.configDir = path.join(homedir(), ".llama-cli");
+    this.configPath = path.join(this.configDir, "config.json");
   }
 
   /**
@@ -35,7 +36,7 @@ export class ConfigStore {
    */
   private ensureConfigDir(): void {
     if (!fs.existsSync(this.configDir)) {
-      fs.mkdirSync(this.configDir, {recursive: true});
+      fs.mkdirSync(this.configDir, { recursive: true });
     }
   }
 
@@ -46,14 +47,14 @@ export class ConfigStore {
   public readConfig(): LlamaCLIConfig {
     this.ensureConfigDir();
     if (!fs.existsSync(this.configPath)) {
-      return {profiles: {}}; // 返回默认空配置
+      return { profiles: {} }; // 返回默认空配置
     }
     try {
-      const content = fs.readFileSync(this.configPath, 'utf-8');
+      const content = fs.readFileSync(this.configPath, "utf-8");
       return JSON.parse(content) as LlamaCLIConfig;
     } catch (error) {
       console.error(`Error reading config file: ${(error as Error).message}`);
-      return {profiles: {}}; // 读取失败时返回默认空配置
+      return { profiles: {} }; // 读取失败时返回默认空配置
     }
   }
 
@@ -64,7 +65,7 @@ export class ConfigStore {
   public writeConfig(config: LlamaCLIConfig): void {
     this.ensureConfigDir();
     try {
-      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), 'utf-8');
+      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), "utf-8");
     } catch (error) {
       console.error(`Error writing config file: ${(error as Error).message}`);
     }
