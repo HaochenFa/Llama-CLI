@@ -3,6 +3,8 @@ import { ContextCompiler } from "../lib/context-compiler.js";
 import { AdapterFactory } from "../lib/adapters/adapter-factory.js";
 import { ToolDispatcher } from "../lib/tool-dispatcher.js";
 import { FileContextManager } from "../lib/file-context-manager.js";
+import { ThinkingRenderer } from "../lib/thinking-renderer.js";
+import { StreamProcessor } from "../lib/stream-processor.js";
 import {
   InternalContext,
   ChatMessage,
@@ -20,6 +22,8 @@ export class InteractiveChatSession {
   private contextCompiler: ContextCompiler;
   private toolDispatcher: ToolDispatcher;
   private fileContextManager: FileContextManager;
+  private thinkingRenderer: ThinkingRenderer;
+  private streamProcessor: StreamProcessor;
   private internalContext: InternalContext;
   private rl: readline.Interface;
   private llmAdapter: any;
@@ -31,6 +35,8 @@ export class InteractiveChatSession {
     this.contextCompiler = new ContextCompiler();
     this.toolDispatcher = new ToolDispatcher([]);
     this.fileContextManager = new FileContextManager();
+    this.thinkingRenderer = new ThinkingRenderer();
+    this.streamProcessor = new StreamProcessor(this.thinkingRenderer);
     this.debug = debug;
 
     this.internalContext = {
@@ -181,6 +187,9 @@ export class InteractiveChatSession {
       case "compress":
         await this.handleCompressCommand();
         break;
+      case "think":
+        await this.handleThinkCommand(args);
+        break;
       case "exit":
       case "quit":
         console.log(chalk.blue("👋 Goodbye!"));
@@ -210,6 +219,9 @@ export class InteractiveChatSession {
       chalk.cyan("  /memory <add|list|clear>") + chalk.gray("  - Manage long-term memory")
     );
     console.log(chalk.cyan("  /compress") + chalk.gray("               - Compress chat history"));
+    console.log(
+      chalk.cyan("  /think [list|<num>|on|off|clear]") + chalk.gray(" - Manage thinking display")
+    );
     console.log(chalk.cyan("  /exit, /quit") + chalk.gray("             - Exit the chat session"));
     console.log();
     console.log(chalk.bold("💡 Tips:"));
@@ -399,11 +411,15 @@ export class InteractiveChatSession {
         for await (const chunk of this.llmAdapter.chatStream(currentMessages, tools)) {
           if (typeof chunk === "string") {
             assistantResponseContent += chunk;
-            process.stdout.write(chunk); // Stream output in real-time
+            // Use stream processor to handle thinking content
+            this.streamProcessor.processChunk(chunk);
           } else if (typeof chunk === "object" && chunk.type === "tool_call") {
             streamingToolCalls.push(chunk);
           }
         }
+
+        // Finalize stream processing
+        this.streamProcessor.finalize();
 
         // Convert streaming tool calls to ToolCallPayload format
         if (streamingToolCalls.length > 0) {
@@ -698,5 +714,50 @@ Summary:`;
     }
 
     console.log();
+  }
+
+  private async handleThinkCommand(args: string[]): Promise<void> {
+    const subCommand = args[0]?.toLowerCase();
+
+    switch (subCommand) {
+      case "list":
+        this.thinkingRenderer.listThinking();
+        break;
+      case "on":
+        this.thinkingRenderer.toggleThinking(true);
+        break;
+      case "off":
+        this.thinkingRenderer.toggleThinking(false);
+        break;
+      case "clear":
+        this.thinkingRenderer.clearThinking();
+        break;
+      default:
+        if (subCommand && /^\d+$/.test(subCommand)) {
+          // Show specific thinking by index
+          const index = parseInt(subCommand) - 1;
+          this.thinkingRenderer.displayThinkingByIndex(index);
+        } else {
+          // Show latest thinking or help
+          if (this.thinkingRenderer.getThinkingCount() > 0) {
+            this.thinkingRenderer.displayThinking();
+          } else {
+            this.showThinkHelp();
+          }
+        }
+        break;
+    }
+  }
+
+  private showThinkHelp(): void {
+    console.log(chalk.bold.cyan("💭 思维管理命令:"));
+    console.log(chalk.cyan("  /think") + chalk.gray("          - 显示最新的思维内容"));
+    console.log(chalk.cyan("  /think list") + chalk.gray("     - 列出所有思维记录"));
+    console.log(chalk.cyan("  /think <数字>") + chalk.gray("   - 显示指定序号的思维内容"));
+    console.log(chalk.cyan("  /think on") + chalk.gray("       - 开启思维显示"));
+    console.log(chalk.cyan("  /think off") + chalk.gray("      - 关闭思维显示"));
+    console.log(chalk.cyan("  /think clear") + chalk.gray("    - 清空所有思维记录"));
+    console.log();
+    console.log(chalk.gray("💡 当模型使用 <think></think> 标签时，思维内容会被自动处理"));
   }
 }

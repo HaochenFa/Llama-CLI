@@ -3,6 +3,8 @@ import { ConfigStore } from "../lib/config-store.js";
 import { ContextCompiler } from "../lib/context-compiler.js";
 import { AdapterFactory } from "../lib/adapters/adapter-factory.js";
 import { ToolDispatcher } from "../lib/tool-dispatcher.js";
+import { ThinkingRenderer } from "../lib/thinking-renderer.js";
+import { StreamProcessor } from "../lib/stream-processor.js";
 import {
   InternalContext,
   ChatMessage,
@@ -17,6 +19,8 @@ export function registerGetCommand(program: Command) {
   const configStore = new ConfigStore();
   const contextCompiler = new ContextCompiler();
   const toolDispatcher = new ToolDispatcher([]);
+  const thinkingRenderer = new ThinkingRenderer();
+  const streamProcessor = new StreamProcessor(thinkingRenderer);
 
   program
     .command("get")
@@ -81,11 +85,15 @@ export function registerGetCommand(program: Command) {
           )) {
             if (typeof chunk === "string") {
               assistantResponseContent += chunk;
-              process.stdout.write(chunk); // Stream output in real-time
+              // Use stream processor to handle thinking content
+              streamProcessor.processChunk(chunk);
             } else if (typeof chunk === "object" && chunk.type === "tool_call") {
               streamingToolCalls.push(chunk);
             }
           }
+
+          // Finalize stream processing
+          streamProcessor.finalize();
 
           // Convert streaming tool calls to ToolCallPayload format
           if (streamingToolCalls.length > 0) {
