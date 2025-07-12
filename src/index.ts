@@ -33,6 +33,9 @@ program
               '💡 Tip: Use "llama-cli config add <name> <type> <endpoint>" to add a new profile.'
             )
           );
+          console.log(
+            chalk.blue('💡 See "llama-cli config templates" for configuration examples.')
+          );
           return;
         }
 
@@ -57,51 +60,81 @@ program
     new Command("add")
       .description("Add a new LLM profile.")
       .argument("<name>", "Name of the new profile")
-      .argument("<type>", "Type of the LLM (e.g., ollama, vllm)")
-      .argument("<endpoint>", "Endpoint URL of the LLM (e.g., http://localhost:11434)")
-      .action((name: string, type: "ollama" | "vllm", endpoint: string) => {
-        try {
-          // Validate inputs
-          if (!name.trim()) {
-            console.error(chalk.red("❌ Error: Profile name cannot be empty."));
-            return;
-          }
-
-          if (!["ollama", "vllm"].includes(type)) {
-            console.error(chalk.red(`❌ Error: Unsupported LLM type: ${type}`));
-            console.log(chalk.blue("💡 Tip: Supported types are: ollama, vllm"));
-            return;
-          }
-
+      .argument(
+        "<type>",
+        "Type of the LLM (ollama, vllm, openai, anthropic, openai-compatible, gemini)"
+      )
+      .argument("<endpoint>", "Endpoint URL of the LLM")
+      .option("--api-key <key>", "API key (required for openai, anthropic, gemini)")
+      .option("--model <model>", "Model name (optional)")
+      .option("--service-name <name>", "Service name (for openai-compatible)")
+      .action(
+        (
+          name: string,
+          type: string,
+          endpoint: string,
+          options: { apiKey?: string; model?: string; serviceName?: string }
+        ) => {
           try {
-            new URL(endpoint);
-          } catch {
-            console.error(chalk.red("❌ Error: Invalid endpoint URL."));
-            console.log(chalk.blue("💡 Tip: Use a valid URL like http://localhost:11434"));
-            return;
-          }
+            // Validate inputs
+            if (!name.trim()) {
+              console.error(chalk.red("❌ Error: Profile name cannot be empty."));
+              return;
+            }
 
-          if (configStore.getProfile(name.trim())) {
-            console.error(chalk.red(`❌ Error: Profile "${name}" already exists.`));
-            console.log(
-              chalk.blue("💡 Tip: Use a different name or remove the existing profile first.")
-            );
-            return;
-          }
+            const supportedTypes = AdapterFactory.getSupportedTypes().map((t) => t.type);
+            if (!supportedTypes.includes(type)) {
+              console.error(chalk.red(`❌ Error: Unsupported LLM type: ${type}`));
+              console.log(chalk.blue(`💡 Tip: Supported types are: ${supportedTypes.join(", ")}`));
+              return;
+            }
 
-          const newProfile: LLMProfile = { name: name.trim(), type, endpoint: endpoint.trim() };
-          configStore.setProfile(newProfile);
-          console.log(chalk.green(`✅ Profile "${name}" added successfully.`));
+            try {
+              new URL(endpoint);
+            } catch {
+              console.error(chalk.red("❌ Error: Invalid endpoint URL."));
+              console.log(chalk.blue("💡 Tip: Use a valid URL like http://localhost:11434"));
+              return;
+            }
 
-          if (!configStore.getCurrentProfile()) {
-            configStore.setCurrentProfile(name);
-            console.log(chalk.blue(`🎯 Profile "${name}" set as current profile.`));
+            if (configStore.getProfile(name.trim())) {
+              console.error(chalk.red(`❌ Error: Profile "${name}" already exists.`));
+              console.log(
+                chalk.blue("💡 Tip: Use a different name or remove the existing profile first.")
+              );
+              return;
+            }
+
+            // Validate required API key for certain types
+            const requiresApiKey = ["openai", "anthropic", "gemini"];
+            if (requiresApiKey.includes(type) && !options.apiKey) {
+              console.error(chalk.red(`❌ Error: API key is required for ${type}.`));
+              console.log(chalk.blue(`💡 Tip: Use --api-key <your-key> to provide the API key.`));
+              return;
+            }
+
+            const newProfile: LLMProfile = {
+              name: name.trim(),
+              type: type as LLMProfile["type"],
+              endpoint: endpoint.trim(),
+              ...(options.apiKey && { apiKey: options.apiKey }),
+              ...(options.model && { model: options.model }),
+              ...(options.serviceName && { serviceName: options.serviceName }),
+            };
+
+            configStore.setProfile(newProfile);
+            console.log(chalk.green(`✅ Profile "${name}" added successfully.`));
+
+            if (!configStore.getCurrentProfile()) {
+              configStore.setCurrentProfile(name);
+              console.log(chalk.blue(`🎯 Profile "${name}" set as current profile.`));
+            }
+          } catch (error) {
+            console.error(chalk.red(`❌ Error adding profile: ${(error as Error).message}`));
+            console.log(chalk.blue("💡 Tip: Please check your file permissions and try again."));
           }
-        } catch (error) {
-          console.error(chalk.red(`❌ Error adding profile: ${(error as Error).message}`));
-          console.log(chalk.blue("💡 Tip: Please check your file permissions and try again."));
         }
-      })
+      )
   )
   .addCommand(
     new Command("use")
@@ -154,6 +187,63 @@ program
           console.log(chalk.blue("💡 Tip: Please check your configuration file permissions."));
         }
       })
+  )
+  .addCommand(
+    new Command("templates")
+      .description("Show configuration templates for all supported LLM types.")
+      .action(() => {
+        console.log(chalk.bold.blue("📋 LLM Configuration Templates"));
+        console.log();
+
+        const supportedTypes = AdapterFactory.getSupportedTypes();
+
+        supportedTypes.forEach((typeInfo) => {
+          const defaultConfig = AdapterFactory.getDefaultConfig(typeInfo.type as any);
+
+          console.log(chalk.bold.cyan(`${typeInfo.name}:`));
+          console.log(chalk.gray(`  ${typeInfo.description}`));
+          console.log();
+
+          // Show basic command
+          console.log(chalk.yellow("  Basic command:"));
+          console.log(
+            chalk.white(
+              `    llama-cli config add my-${typeInfo.type} ${typeInfo.type} ${
+                defaultConfig.endpoint || "YOUR_ENDPOINT"
+              }`
+            )
+          );
+
+          // Show full command with options
+          if (["openai", "anthropic", "gemini"].includes(typeInfo.type)) {
+            console.log(chalk.yellow("  With API key:"));
+            console.log(
+              chalk.white(
+                `    llama-cli config add my-${typeInfo.type} ${typeInfo.type} ${defaultConfig.endpoint} --api-key YOUR_API_KEY`
+              )
+            );
+          }
+
+          if (typeInfo.type === "openai-compatible") {
+            console.log(chalk.yellow("  With service name:"));
+            console.log(
+              chalk.white(
+                `    llama-cli config add my-service ${typeInfo.type} YOUR_ENDPOINT --service-name "Your Service"`
+              )
+            );
+          }
+
+          if (defaultConfig.model) {
+            console.log(chalk.yellow("  With specific model:"));
+            console.log(chalk.white(`    ... --model ${defaultConfig.model}`));
+          }
+
+          console.log();
+        });
+
+        console.log(chalk.blue("💡 Tip: Replace placeholders with your actual values."));
+        console.log(chalk.blue("💡 Use 'llama-cli config add --help' for more details."));
+      })
   );
 
 // Register commands
@@ -193,7 +283,8 @@ async function runFirstTimeSetup() {
   console.log(chalk.gray("It looks like you're new here. Let's set up your first LLM connection."));
   console.log();
 
-  const answers = await inquirer.prompt([
+  // First, get basic profile info
+  const basicAnswers = await inquirer.prompt([
     {
       type: "input",
       name: "profileName",
@@ -213,17 +304,24 @@ async function runFirstTimeSetup() {
       type: "list",
       name: "llmType",
       message: "Select the type of your LLM:",
-      choices: [
-        { name: "Ollama (Local LLM runtime)", value: "ollama" },
-        { name: "vLLM (High-performance inference server)", value: "vllm" },
-      ],
+      choices: AdapterFactory.getSupportedTypes().map((type) => ({
+        name: `${type.name} - ${type.description}`,
+        value: type.type,
+      })),
       default: "ollama",
     },
+  ]);
+
+  // Get default config for the selected type
+  const defaultConfig = AdapterFactory.getDefaultConfig(basicAnswers.llmType);
+
+  // Then get type-specific configuration
+  const typeSpecificQuestions = [
     {
       type: "input",
       name: "endpoint",
       message: "Enter the endpoint URL for your LLM:",
-      default: "http://localhost:11434",
+      default: defaultConfig.endpoint || "http://localhost:11434",
       validate: (input: string) => {
         try {
           new URL(input);
@@ -233,12 +331,52 @@ async function runFirstTimeSetup() {
         }
       },
     },
-  ]);
+  ];
+
+  // Add API key question for services that require it
+  const requiresApiKey = ["openai", "anthropic", "gemini"];
+  if (requiresApiKey.includes(basicAnswers.llmType)) {
+    typeSpecificQuestions.push({
+      type: "password",
+      name: "apiKey",
+      message: `Enter your ${basicAnswers.llmType} API key:`,
+      validate: (input: string) => {
+        if (!input.trim()) {
+          return "API key is required for this service";
+        }
+        return true;
+      },
+    });
+  }
+
+  // Add model question
+  typeSpecificQuestions.push({
+    type: "input",
+    name: "model",
+    message: "Enter the model name (optional):",
+    default: defaultConfig.model || "",
+  });
+
+  // Add service name for openai-compatible
+  if (basicAnswers.llmType === "openai-compatible") {
+    typeSpecificQuestions.push({
+      type: "input",
+      name: "serviceName",
+      message: "Enter a service name for this OpenAI-compatible API:",
+      default: "Custom Service",
+    });
+  }
+
+  const typeSpecificAnswers = await inquirer.prompt(typeSpecificQuestions);
+  const answers = { ...basicAnswers, ...typeSpecificAnswers };
 
   const newProfile: LLMProfile = {
     name: answers.profileName.trim(),
-    type: answers.llmType as "ollama" | "vllm",
+    type: answers.llmType as LLMProfile["type"],
     endpoint: answers.endpoint.trim(),
+    ...(answers.apiKey && { apiKey: answers.apiKey }),
+    ...(answers.model && { model: answers.model }),
+    ...(answers.serviceName && { serviceName: answers.serviceName }),
   };
 
   try {

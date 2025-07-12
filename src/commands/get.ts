@@ -32,6 +32,7 @@ export function registerGetCommand(program: Command) {
             '💡 Tip: Use "llama-cli config add" to add a profile and "llama-cli config use" to set it as current.'
           )
         );
+        console.log(chalk.blue('💡 See "llama-cli config templates" for configuration examples.'));
         process.exit(1);
       }
 
