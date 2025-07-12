@@ -1,8 +1,8 @@
 // src/lib/mcp/manager.ts
 // MCP Server Manager for handling multiple MCP connections
 
-import { EventEmitter } from 'events';
-import { McpClient } from './client';
+import { EventEmitter } from "events";
+import { McpClient } from "./client";
 import {
   McpServerConfig,
   McpTool,
@@ -10,8 +10,8 @@ import {
   McpPrompt,
   CallToolRequest,
   CallToolResult,
-  McpConnectionStatus
-} from './types';
+  McpConnectionStatus,
+} from "./types";
 
 export interface McpServerEntry {
   id: string;
@@ -39,7 +39,7 @@ export class McpManager extends EventEmitter {
     }
 
     this.isInitialized = true;
-    console.log('MCP Manager initialized');
+    console.log("MCP Manager initialized");
   }
 
   /**
@@ -50,28 +50,28 @@ export class McpManager extends EventEmitter {
       throw new Error(`MCP server with id "${id}" already exists`);
     }
 
-    const client = new McpClient(config, name, process.env.DEBUG_MCP === 'true');
+    const client = new McpClient(config, name, process.env.DEBUG_MCP === "true");
     const serverEntry: McpServerEntry = {
       id,
       name,
       config,
       client,
-      status: 'disconnected'
+      status: "disconnected",
     };
 
     // Set up event listeners
-    client.on('connection-status', (status) => {
+    client.on("connection-status", (status) => {
       serverEntry.status = status;
-      this.emit('server-status-changed', { id, status });
+      this.emit("server-status-changed", { id, status });
     });
 
-    client.on('error', (error) => {
+    client.on("error", (error) => {
       serverEntry.lastError = error.message;
-      this.emit('server-error', { id, error });
+      this.emit("server-error", { id, error });
     });
 
     this.servers.set(id, serverEntry);
-    this.emit('server-added', { id, name });
+    this.emit("server-added", { id, name });
   }
 
   /**
@@ -85,7 +85,7 @@ export class McpManager extends EventEmitter {
 
     await server.client.disconnect();
     this.servers.delete(id);
-    this.emit('server-removed', { id });
+    this.emit("server-removed", { id });
   }
 
   /**
@@ -116,8 +116,8 @@ export class McpManager extends EventEmitter {
    * Connect to all servers
    */
   public async connectAll(): Promise<void> {
-    const promises = Array.from(this.servers.values()).map(server => 
-      server.client.connect().catch(error => {
+    const promises = Array.from(this.servers.values()).map((server) =>
+      server.client.connect().catch((error) => {
         console.error(`Failed to connect to MCP server ${server.id}:`, error);
       })
     );
@@ -129,9 +129,7 @@ export class McpManager extends EventEmitter {
    * Disconnect from all servers
    */
   public async disconnectAll(): Promise<void> {
-    const promises = Array.from(this.servers.values()).map(server => 
-      server.client.disconnect()
-    );
+    const promises = Array.from(this.servers.values()).map((server) => server.client.disconnect());
 
     await Promise.all(promises);
   }
@@ -160,11 +158,11 @@ export class McpManager extends EventEmitter {
       if (server.client.isConnected()) {
         try {
           const tools = await server.client.listTools();
-          tools.forEach(tool => {
+          tools.forEach((tool) => {
             allTools.push({
               ...tool,
               serverId: server.id,
-              serverName: server.name
+              serverName: server.name,
             });
           });
         } catch (error) {
@@ -179,18 +177,20 @@ export class McpManager extends EventEmitter {
   /**
    * Get all available resources from all connected servers
    */
-  public async getAllResources(): Promise<Array<McpResource & { serverId: string; serverName: string }>> {
+  public async getAllResources(): Promise<
+    Array<McpResource & { serverId: string; serverName: string }>
+  > {
     const allResources: Array<McpResource & { serverId: string; serverName: string }> = [];
 
     for (const server of this.servers.values()) {
       if (server.client.isConnected()) {
         try {
           const resources = await server.client.listResources();
-          resources.forEach(resource => {
+          resources.forEach((resource) => {
             allResources.push({
               ...resource,
               serverId: server.id,
-              serverName: server.name
+              serverName: server.name,
             });
           });
         } catch (error) {
@@ -205,18 +205,20 @@ export class McpManager extends EventEmitter {
   /**
    * Get all available prompts from all connected servers
    */
-  public async getAllPrompts(): Promise<Array<McpPrompt & { serverId: string; serverName: string }>> {
+  public async getAllPrompts(): Promise<
+    Array<McpPrompt & { serverId: string; serverName: string }>
+  > {
     const allPrompts: Array<McpPrompt & { serverId: string; serverName: string }> = [];
 
     for (const server of this.servers.values()) {
       if (server.client.isConnected()) {
         try {
           const prompts = await server.client.listPrompts();
-          prompts.forEach(prompt => {
+          prompts.forEach((prompt) => {
             allPrompts.push({
               ...prompt,
               serverId: server.id,
-              serverName: server.name
+              serverName: server.name,
             });
           });
         } catch (error) {
@@ -247,9 +249,12 @@ export class McpManager extends EventEmitter {
   /**
    * Find and call a tool by name (searches all servers)
    */
-  public async callToolByName(toolName: string, args?: Record<string, any>): Promise<CallToolResult> {
+  public async callToolByName(
+    toolName: string,
+    args?: Record<string, any>
+  ): Promise<CallToolResult> {
     const allTools = await this.getAllTools();
-    const tool = allTools.find(t => t.name === toolName);
+    const tool = allTools.find((t) => t.name === toolName);
 
     if (!tool) {
       throw new Error(`Tool "${toolName}" not found in any connected MCP server`);
@@ -257,7 +262,7 @@ export class McpManager extends EventEmitter {
 
     return await this.callTool(tool.serverId, {
       name: toolName,
-      arguments: args
+      arguments: args,
     });
   }
 
@@ -308,7 +313,7 @@ export class McpManager extends EventEmitter {
       connected: 0,
       connecting: 0,
       disconnected: 0,
-      error: 0
+      error: 0,
     };
 
     for (const server of this.servers.values()) {

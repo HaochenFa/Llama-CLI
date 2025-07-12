@@ -1,10 +1,10 @@
 // src/lib/mcp/config.ts
 // MCP configuration management
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { McpServerConfig } from './types';
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import { McpServerConfig } from "./types";
 
 export interface McpConfigEntry {
   id: string;
@@ -29,8 +29,8 @@ export class McpConfigManager {
   private config: McpConfig;
 
   constructor() {
-    const configDir = path.join(os.homedir(), '.llamacli');
-    this.configPath = path.join(configDir, 'mcp-config.json');
+    const configDir = path.join(os.homedir(), ".llamacli");
+    this.configPath = path.join(configDir, "mcp-config.json");
     this.config = this.loadConfig();
   }
 
@@ -43,18 +43,18 @@ export class McpConfigManager {
       globalSettings: {
         autoConnectOnStartup: true,
         connectionTimeout: 30000,
-        maxRetries: 3
-      }
+        maxRetries: 3,
+      },
     };
 
     try {
       if (fs.existsSync(this.configPath)) {
-        const configData = fs.readFileSync(this.configPath, 'utf-8');
+        const configData = fs.readFileSync(this.configPath, "utf-8");
         const parsed = JSON.parse(configData);
         return { ...defaultConfig, ...parsed };
       }
     } catch (error) {
-      console.warn('Failed to load MCP config, using defaults:', error);
+      console.warn("Failed to load MCP config, using defaults:", error);
     }
 
     return defaultConfig;
@@ -79,9 +79,9 @@ export class McpConfigManager {
   /**
    * Add a new MCP server configuration
    */
-  public addServer(entry: Omit<McpConfigEntry, 'id'>): string {
+  public addServer(entry: Omit<McpConfigEntry, "id">): string {
     const id = this.generateServerId(entry.name);
-    
+
     if (this.config.servers[id]) {
       throw new Error(`MCP server with id "${id}" already exists`);
     }
@@ -94,7 +94,7 @@ export class McpConfigManager {
   /**
    * Update an existing MCP server configuration
    */
-  public updateServer(id: string, updates: Partial<Omit<McpConfigEntry, 'id'>>): void {
+  public updateServer(id: string, updates: Partial<Omit<McpConfigEntry, "id">>): void {
     if (!this.config.servers[id]) {
       throw new Error(`MCP server with id "${id}" not found`);
     }
@@ -126,14 +126,14 @@ export class McpConfigManager {
    * Get enabled server configurations
    */
   public getEnabledServers(): McpConfigEntry[] {
-    return this.getServers().filter(server => server.enabled);
+    return this.getServers().filter((server) => server.enabled);
   }
 
   /**
    * Get auto-connect server configurations
    */
   public getAutoConnectServers(): McpConfigEntry[] {
-    return this.getServers().filter(server => server.enabled && server.autoConnect);
+    return this.getServers().filter((server) => server.enabled && server.autoConnect);
   }
 
   /**
@@ -170,14 +170,14 @@ export class McpConfigManager {
   /**
    * Get global settings
    */
-  public getGlobalSettings(): McpConfig['globalSettings'] {
+  public getGlobalSettings(): McpConfig["globalSettings"] {
     return this.config.globalSettings;
   }
 
   /**
    * Update global settings
    */
-  public updateGlobalSettings(updates: Partial<McpConfig['globalSettings']>): void {
+  public updateGlobalSettings(updates: Partial<McpConfig["globalSettings"]>): void {
     this.config.globalSettings = { ...this.config.globalSettings, ...updates };
     this.saveConfig();
   }
@@ -186,7 +186,7 @@ export class McpConfigManager {
    * Generate a unique server ID
    */
   private generateServerId(name: string): string {
-    const baseId = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const baseId = name.toLowerCase().replace(/[^a-z0-9]/g, "-");
     let id = baseId;
     let counter = 1;
 
@@ -205,12 +205,12 @@ export class McpConfigManager {
     const errors: string[] = [];
 
     if (!config.command || !config.command.trim()) {
-      errors.push('Command is required and cannot be empty');
+      errors.push("Command is required and cannot be empty");
     }
 
     // Validate command format
-    if (config.command && config.command.includes(' ')) {
-      errors.push('Command should not contain spaces - use args array for arguments');
+    if (config.command && config.command.includes(" ")) {
+      errors.push("Command should not contain spaces - use args array for arguments");
     }
 
     // Check if working directory exists
@@ -221,7 +221,7 @@ export class McpConfigManager {
     // Validate environment variables
     if (config.env) {
       for (const [key, value] of Object.entries(config.env)) {
-        if (typeof key !== 'string' || typeof value !== 'string') {
+        if (typeof key !== "string" || typeof value !== "string") {
           errors.push(`Environment variable ${key} must be a string`);
         }
       }
@@ -229,10 +229,10 @@ export class McpConfigManager {
 
     // Validate arguments
     if (config.args && !Array.isArray(config.args)) {
-      errors.push('Arguments must be an array of strings');
+      errors.push("Arguments must be an array of strings");
     } else if (config.args) {
       for (let i = 0; i < config.args.length; i++) {
-        if (typeof config.args[i] !== 'string') {
+        if (typeof config.args[i] !== "string") {
           errors.push(`Argument at index ${i} must be a string`);
         }
       }
@@ -240,53 +240,57 @@ export class McpConfigManager {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
   /**
    * Get example configurations for common MCP servers
    */
-  public getExampleConfigs(): Array<{ name: string; description: string; config: McpServerConfig }> {
+  public getExampleConfigs(): Array<{
+    name: string;
+    description: string;
+    config: McpServerConfig;
+  }> {
     return [
       {
-        name: 'File System',
-        description: 'Access local file system operations',
+        name: "File System",
+        description: "Access local file system operations",
         config: {
-          command: 'npx',
-          args: ['@modelcontextprotocol/server-filesystem', '/path/to/allowed/directory'],
-          env: {}
-        }
+          command: "npx",
+          args: ["@modelcontextprotocol/server-filesystem", "/path/to/allowed/directory"],
+          env: {},
+        },
       },
       {
-        name: 'Git',
-        description: 'Git repository operations',
+        name: "Git",
+        description: "Git repository operations",
         config: {
-          command: 'npx',
-          args: ['@modelcontextprotocol/server-git', '--repository', '/path/to/git/repo'],
-          env: {}
-        }
+          command: "npx",
+          args: ["@modelcontextprotocol/server-git", "--repository", "/path/to/git/repo"],
+          env: {},
+        },
       },
       {
-        name: 'SQLite',
-        description: 'SQLite database operations',
+        name: "SQLite",
+        description: "SQLite database operations",
         config: {
-          command: 'npx',
-          args: ['@modelcontextprotocol/server-sqlite', '/path/to/database.db'],
-          env: {}
-        }
+          command: "npx",
+          args: ["@modelcontextprotocol/server-sqlite", "/path/to/database.db"],
+          env: {},
+        },
       },
       {
-        name: 'Web Search',
-        description: 'Web search capabilities',
+        name: "Web Search",
+        description: "Web search capabilities",
         config: {
-          command: 'npx',
-          args: ['@modelcontextprotocol/server-brave-search'],
+          command: "npx",
+          args: ["@modelcontextprotocol/server-brave-search"],
           env: {
-            BRAVE_API_KEY: 'your-api-key-here'
-          }
-        }
-      }
+            BRAVE_API_KEY: "your-api-key-here",
+          },
+        },
+      },
     ];
   }
 
@@ -296,17 +300,17 @@ export class McpConfigManager {
   public importConfig(configJson: string): void {
     try {
       const imported = JSON.parse(configJson);
-      
+
       // Validate the imported config structure
-      if (!imported.servers || typeof imported.servers !== 'object') {
-        throw new Error('Invalid config format: missing servers object');
+      if (!imported.servers || typeof imported.servers !== "object") {
+        throw new Error("Invalid config format: missing servers object");
       }
 
       // Merge with existing config
       this.config = {
         ...this.config,
         ...imported,
-        servers: { ...this.config.servers, ...imported.servers }
+        servers: { ...this.config.servers, ...imported.servers },
       };
 
       this.saveConfig();
@@ -331,8 +335,8 @@ export class McpConfigManager {
       globalSettings: {
         autoConnectOnStartup: true,
         connectionTimeout: 30000,
-        maxRetries: 3
-      }
+        maxRetries: 3,
+      },
     };
     this.saveConfig();
   }
