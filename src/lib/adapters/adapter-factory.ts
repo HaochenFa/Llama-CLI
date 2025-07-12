@@ -96,7 +96,8 @@ export class AdapterFactory {
           const testMessages = [{ role: "user" as const, content: "test" }];
 
           // 尝试获取第一个响应块
-          const iterator = adapter.chatStream(testMessages, []);
+          const iterable = adapter.chatStream(testMessages, []);
+          const iterator = iterable[Symbol.asyncIterator]();
           const firstResult = await iterator.next();
 
           return {

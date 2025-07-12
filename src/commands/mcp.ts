@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import { getMcpManager, getMcpToolAdapter } from "../lib/tools/mcp_manager";
-import { McpConfigManager } from "../lib/mcp/config";
-import { getMcpStatus } from "../lib/mcp-init";
+import { getMcpManager, getMcpToolAdapter } from "../lib/tools/mcp_manager.js";
+import { McpConfigManager } from "../lib/mcp/config.js";
+import { getMcpStatus } from "../lib/mcp-init.js";
 import chalk from "chalk";
 import inquirer from "inquirer";
 
@@ -31,7 +31,7 @@ export function registerMcpCommand(program: Command) {
         console.log();
 
         for (const server of servers) {
-          const runtimeServer = mcpManager.getServer(server.id);
+          const runtimeServer = mcpManager?.getServer(server.id);
           const status = runtimeServer?.status || "not loaded";
 
           if (options.connectedOnly && status !== "connected") {
@@ -134,7 +134,7 @@ export function registerMcpCommand(program: Command) {
             options = {
               ...options,
               ...answers,
-              args: answers.args ? answers.args.split(" ").filter((arg) => arg.trim()) : [],
+              args: answers.args ? answers.args.split(" ").filter((arg: string) => arg.trim()) : [],
             };
           }
 
@@ -182,11 +182,11 @@ export function registerMcpCommand(program: Command) {
         console.log(chalk.blue(`🔄 Connecting to MCP server "${serverConfig.name}"...`));
 
         // Add server to manager if not already added
-        if (!mcpManager.getServer(serverId)) {
-          await mcpManager.addServer(serverId, serverConfig.name, serverConfig.config);
+        if (!mcpManager?.getServer(serverId)) {
+          await mcpManager?.addServer(serverId, serverConfig.name, serverConfig.config);
         }
 
-        await mcpManager.connectServer(serverId);
+        await mcpManager?.connectServer(serverId);
         console.log(chalk.green(`✅ Successfully connected to "${serverConfig.name}"`));
       } catch (error) {
         console.error(chalk.red(`❌ Error connecting to MCP server: ${(error as Error).message}`));
@@ -202,7 +202,7 @@ export function registerMcpCommand(program: Command) {
       try {
         const mcpManager = getMcpManager();
 
-        await mcpManager.disconnectServer(serverId);
+        await mcpManager?.disconnectServer(serverId);
         console.log(chalk.green(`✅ Disconnected from MCP server "${serverId}"`));
       } catch (error) {
         console.error(
@@ -246,8 +246,8 @@ export function registerMcpCommand(program: Command) {
 
         // Disconnect if connected
         try {
-          await mcpManager.disconnectServer(serverId);
-          await mcpManager.removeServer(serverId);
+          await mcpManager?.disconnectServer(serverId);
+          await mcpManager?.removeServer(serverId);
         } catch (error) {
           // Server might not be in manager, that's ok
         }
@@ -268,7 +268,7 @@ export function registerMcpCommand(program: Command) {
       try {
         const status = getMcpStatus();
         const mcpManager = getMcpManager();
-        const servers = mcpManager.getServers();
+        const servers = mcpManager?.getServers() || [];
 
         console.log(chalk.bold.blue("🔌 MCP System Status"));
         console.log();

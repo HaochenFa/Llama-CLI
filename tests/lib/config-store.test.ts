@@ -6,7 +6,6 @@ import * as os from "os";
 
 describe("ConfigStore", () => {
   let ConfigStore: any;
-  let LLMProfile: any;
   let configStore: any;
   let tempConfigPath: string;
   let mockConfig: any;
@@ -27,7 +26,7 @@ describe("ConfigStore", () => {
     mockFs = {
       existsSync: jest.fn().mockReturnValue(true),
       readFileSync: jest.fn().mockImplementation(() => JSON.stringify(configData)),
-      writeFileSync: jest.fn().mockImplementation((path: string, data: string) => {
+      writeFileSync: jest.fn().mockImplementation((path: any, data: any) => {
         configData = JSON.parse(data);
       }),
       mkdirSync: jest.fn(),
@@ -41,9 +40,8 @@ describe("ConfigStore", () => {
     }));
 
     // Dynamically import the module after mocking
-    const configModule = await import("../../src/lib/config-store");
+    const configModule = await import("../../src/lib/config-store.js");
     ConfigStore = configModule.ConfigStore;
-    LLMProfile = configModule.LLMProfile;
 
     configStore = new ConfigStore();
   });
@@ -179,7 +177,7 @@ describe("ConfigStore", () => {
         tmpdir: jest.fn().mockReturnValue("/tmp"),
       }));
 
-      const configModule = await import("../../src/lib/config-store");
+      const configModule = await import("../../src/lib/config-store.js");
       const TestConfigStore = configModule.ConfigStore;
 
       const store = new TestConfigStore();

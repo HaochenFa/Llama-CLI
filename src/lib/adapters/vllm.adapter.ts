@@ -1,7 +1,7 @@
 // src/lib/adapters/vllm.adapter.ts
 
 import axios, { AxiosResponse } from "axios";
-import { ChatMessage, ToolCallPayload, ToolDefinition } from "../../types/context.js";
+import { ChatMessage, StreamingToolCall, ToolDefinition } from "../../types/context.js";
 import { LLMAdapter } from "./base.adapter.js";
 
 /**
@@ -28,7 +28,7 @@ export class vLLMAdapter implements LLMAdapter {
   public async *chatStream(
     messages: ChatMessage[],
     tools?: ToolDefinition[]
-  ): AsyncIterable<string | ToolCallPayload> {
+  ): AsyncIterable<string | StreamingToolCall> {
     try {
       // 构建 OpenAI 兼容的请求负载
       const payload: any = {
@@ -112,19 +112,16 @@ export class vLLMAdapter implements LLMAdapter {
                 // 处理工具调用
                 if (delta.tool_calls && delta.tool_calls.length > 0) {
                   // vLLM 可能会分块发送工具调用，需要累积
-                  const toolCalls = delta.tool_calls.map((tc: any) => ({
-                    id: tc.id,
-                    type: tc.type || "function",
-                    function: {
-                      name: tc.function?.name,
-                      arguments: tc.function?.arguments,
-                    },
-                  }));
-
-                  yield {
-                    type: "tool_calls",
-                    tool_calls: toolCalls,
-                  };
+                  for (const tc of delta.tool_calls) {
+                    yield {
+                      type: "tool_call",
+                      tool_call_id:
+                        tc.id ||
+                        `call_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                      name: tc.function?.name || tc.name,
+                      arguments: tc.function?.arguments || tc.arguments || {},
+                    };
+                  }
                 }
 
                 // 检查是否完成
@@ -216,5 +213,19 @@ export class vLLMAdapter implements LLMAdapter {
       console.error("Error fetching vLLM models:", (error as Error).message);
       return [];
     }
+  }
+
+  /**
+   * 获取当前配置的模型名称
+   */
+  public getModel(): string {
+    return this.model;
+  }
+
+  /**
+   * 获取服务名称
+   */
+  public getServiceName(): string {
+    return "vLLM";
   }
 }

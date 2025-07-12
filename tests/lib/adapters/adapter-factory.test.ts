@@ -1,10 +1,10 @@
 // tests/lib/adapters/adapter-factory.test.ts
 
 import { describe, it, expect, jest } from "@jest/globals";
-import { AdapterFactory } from "../../../src/lib/adapters/adapter-factory";
-import { OllamaAdapter } from "../../../src/lib/adapters/ollama.adapter";
-import { vLLMAdapter } from "../../../src/lib/adapters/vllm.adapter";
-import { LLMProfile } from "../../../src/lib/config-store";
+import { AdapterFactory } from "../../../src/lib/adapters/adapter-factory.js";
+import { OllamaAdapter } from "../../../src/lib/adapters/ollama.adapter.js";
+import { vLLMAdapter } from "../../../src/lib/adapters/vllm.adapter.js";
+import { LLMProfile } from "../../../src/lib/config-store.js";
 
 // Mock the adapter modules
 jest.mock("../../../src/lib/adapters/ollama.adapter");
@@ -74,18 +74,18 @@ describe("AdapterFactory", () => {
       const types = AdapterFactory.getSupportedTypes();
 
       expect(types).toHaveLength(6);
-      expect(types.find((t) => t.type === "ollama")).toBeTruthy();
-      expect(types.find((t) => t.type === "vllm")).toBeTruthy();
-      expect(types.find((t) => t.type === "openai")).toBeTruthy();
-      expect(types.find((t) => t.type === "anthropic")).toBeTruthy();
-      expect(types.find((t) => t.type === "openai-compatible")).toBeTruthy();
-      expect(types.find((t) => t.type === "gemini")).toBeTruthy();
+      expect(types.find((t: any) => t.type === "ollama")).toBeTruthy();
+      expect(types.find((t: any) => t.type === "vllm")).toBeTruthy();
+      expect(types.find((t: any) => t.type === "openai")).toBeTruthy();
+      expect(types.find((t: any) => t.type === "anthropic")).toBeTruthy();
+      expect(types.find((t: any) => t.type === "openai-compatible")).toBeTruthy();
+      expect(types.find((t: any) => t.type === "gemini")).toBeTruthy();
     });
 
     it("should mark all types as available", () => {
       const types = AdapterFactory.getSupportedTypes();
 
-      types.forEach((type) => {
+      types.forEach((type: any) => {
         expect(type.available).toBe(true);
       });
     });
@@ -177,7 +177,7 @@ describe("AdapterFactory", () => {
       const result = AdapterFactory.validateProfile(profile);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes("Unsupported LLM type"))).toBe(true);
+      expect(result.errors.some((e: any) => e.includes("Unsupported LLM type"))).toBe(true);
     });
   });
 
@@ -209,7 +209,8 @@ describe("AdapterFactory", () => {
         endpoint: "http://localhost:11434",
       };
 
-      const mockTestConnection = jest.fn().mockResolvedValue({
+      const mockTestConnection = jest.fn() as any;
+      mockTestConnection.mockResolvedValue({
         success: true,
         models: ["test-model"],
       });

@@ -20,7 +20,7 @@ import {
   MCP_VERSION,
   McpErrorCode,
   McpEvents,
-} from "./types";
+} from "./types.js";
 
 export class McpClient extends EventEmitter implements IMcpClient {
   private serverConfig: McpServerConfig;

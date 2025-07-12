@@ -40,7 +40,7 @@ export interface JsonRpcError {
  */
 export interface ServerCapabilities {
   experimental?: Record<string, any>;
-  logging?: {};
+  logging?: object;
   prompts?: {
     listChanged?: boolean;
   };
@@ -58,7 +58,7 @@ export interface ServerCapabilities {
  */
 export interface ClientCapabilities {
   experimental?: Record<string, any>;
-  sampling?: {};
+  sampling?: object;
 }
 
 /**

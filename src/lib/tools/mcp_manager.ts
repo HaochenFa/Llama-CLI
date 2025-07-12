@@ -1,10 +1,10 @@
 // src/lib/tools/mcp_manager.ts
 // Tool for managing MCP servers and connections
 
-import { ToolDefinition } from "../../types/context";
-import { McpManager } from "../mcp/manager";
-import { McpConfigManager } from "../mcp/config";
-import { McpToolAdapter } from "../mcp/tool-adapter";
+import { ToolDefinition } from "../../types/context.js";
+import { McpManager } from "../mcp/manager.js";
+import { McpConfigManager } from "../mcp/config.js";
+import { McpToolAdapter } from "../mcp/tool-adapter.js";
 
 // Global MCP instances (will be initialized when needed)
 let mcpManager: McpManager | null = null;
@@ -106,7 +106,7 @@ export const mcp_manager_tool: ToolDefinition = {
           }
 
           const serverList = servers
-            .map((server) => {
+            .map((server: any) => {
               const mcpServer = mcpManager!.getServer(server.id);
               const status = mcpServer?.status || "not loaded";
               const statusIcon = getStatusIcon(status);

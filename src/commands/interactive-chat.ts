@@ -3,7 +3,13 @@ import { ContextCompiler } from "../lib/context-compiler.js";
 import { AdapterFactory } from "../lib/adapters/adapter-factory.js";
 import { ToolDispatcher } from "../lib/tool-dispatcher.js";
 import { FileContextManager } from "../lib/file-context-manager.js";
-import { InternalContext, ChatMessage, ToolCallPayload } from "../types/context.js";
+import {
+  InternalContext,
+  ChatMessage,
+  ToolCallPayload,
+  StreamingToolCall,
+  ToolCall,
+} from "../types/context.js";
 import chalk from "chalk";
 import readline from "readline";
 import inquirer from "inquirer";
@@ -178,7 +184,6 @@ export class InteractiveChatSession {
       case "quit":
         console.log(chalk.blue("👋 Goodbye!"));
         process.exit(0);
-        break;
       default:
         console.log(chalk.red(`❌ Unknown command: /${cmd}`));
         console.log(chalk.blue("💡 Tip: Use /help to see available commands"));
@@ -386,6 +391,7 @@ export class InteractiveChatSession {
 
         let assistantResponseContent = "";
         let toolCallPayload: ToolCallPayload | null = null;
+        const streamingToolCalls: StreamingToolCall[] = [];
 
         // Stream the response (pass tools only in agent mode)
         const tools = this.mode === "agent" ? this.internalContext.available_tools : [];
@@ -393,9 +399,26 @@ export class InteractiveChatSession {
           if (typeof chunk === "string") {
             assistantResponseContent += chunk;
             process.stdout.write(chunk); // Stream output in real-time
-          } else if (typeof chunk === "object" && chunk.type === "tool_calls") {
-            toolCallPayload = chunk;
+          } else if (typeof chunk === "object" && chunk.type === "tool_call") {
+            streamingToolCalls.push(chunk);
           }
+        }
+
+        // Convert streaming tool calls to ToolCallPayload format
+        if (streamingToolCalls.length > 0) {
+          const toolCalls: ToolCall[] = streamingToolCalls.map((stc) => ({
+            id: stc.tool_call_id,
+            type: "function" as const,
+            function: {
+              name: stc.name,
+              arguments: stc.arguments,
+            },
+          }));
+
+          toolCallPayload = {
+            type: "tool_calls",
+            tool_calls: toolCalls,
+          };
         }
 
         // Add a newline at the end if we had content

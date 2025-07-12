@@ -5,7 +5,7 @@ import { ToolDefinition, ChatMessage } from "../types/context.js";
 import { UnifiedMcpManager } from "./mcp/unified-manager.js";
 import Ajv from "ajv";
 
-const ajv = new Ajv();
+const ajv = new Ajv.default();
 
 /**
  * Unified ToolDispatcher - All tools are handled through MCP protocol

@@ -1,8 +1,8 @@
 // src/lib/mcp-init.ts
 // MCP initialization and auto-connection module
 
-import { getMcpManager, getMcpToolAdapter } from "./tools/mcp_manager";
-import { McpConfigManager } from "./mcp/config";
+import { getMcpManager } from "./tools/mcp_manager.js";
+import { McpConfigManager } from "./mcp/config.js";
 import chalk from "chalk";
 
 /**
@@ -17,7 +17,7 @@ export async function initializeMcp(): Promise<void> {
 
     // Load server configurations
     const servers = mcpConfigManager.getServers();
-    const enabledServers = servers.filter((server) => server.enabled);
+    const enabledServers = servers.filter((server: any) => server.enabled);
 
     if (enabledServers.length === 0) {
       console.log(chalk.gray("   No MCP servers configured or enabled."));
@@ -29,7 +29,7 @@ export async function initializeMcp(): Promise<void> {
     // Add servers to manager
     for (const serverConfig of enabledServers) {
       try {
-        await mcpManager.addServer(serverConfig.id, serverConfig.name, serverConfig.config);
+        await mcpManager?.addServer(serverConfig.id, serverConfig.name, serverConfig.config);
         console.log(chalk.gray(`   Added server: ${serverConfig.name}`));
       } catch (error) {
         console.log(
@@ -41,14 +41,14 @@ export async function initializeMcp(): Promise<void> {
     }
 
     // Auto-connect to servers marked for auto-connection
-    const autoConnectServers = enabledServers.filter((server) => server.autoConnect);
+    const autoConnectServers = enabledServers.filter((server: any) => server.autoConnect);
 
     if (autoConnectServers.length > 0) {
       console.log(chalk.blue(`   Auto-connecting to ${autoConnectServers.length} server(s)...`));
 
-      const connectionPromises = autoConnectServers.map(async (serverConfig) => {
+      const connectionPromises = autoConnectServers.map(async (serverConfig: any) => {
         try {
-          await mcpManager.connectServer(serverConfig.id);
+          await mcpManager?.connectServer(serverConfig.id);
           console.log(chalk.green(`   ✓ Connected to ${serverConfig.name}`));
           return { success: true, server: serverConfig.name };
         } catch (error) {
@@ -60,8 +60,8 @@ export async function initializeMcp(): Promise<void> {
       });
 
       const results = await Promise.all(connectionPromises);
-      const successful = results.filter((r) => r.success).length;
-      const failed = results.filter((r) => !r.success).length;
+      const successful = results.filter((r: any) => r.success).length;
+      const failed = results.filter((r: any) => !r.success).length;
 
       if (successful > 0) {
         console.log(chalk.green(`   Successfully connected to ${successful} MCP server(s)`));
@@ -101,8 +101,8 @@ export async function initializeMcpTools(toolDispatcher: any): Promise<void> {
 export function getMcpStatus(): { servers: number; connectedServers: number; tools: number } {
   try {
     const mcpManager = getMcpManager();
-    const servers = mcpManager.getServers();
-    const connectedServers = servers.filter((s) => s.status === "connected").length;
+    const servers = mcpManager?.getServers() || [];
+    const connectedServers = servers.filter((s: any) => s.status === "connected").length;
 
     // Get tool count (this would need to be implemented in the manager)
     let toolCount = 0;

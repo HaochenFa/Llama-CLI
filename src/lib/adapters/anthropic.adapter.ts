@@ -1,7 +1,7 @@
 // src/lib/adapters/anthropic.adapter.ts
 
 import axios, { AxiosResponse } from "axios";
-import { ChatMessage, ToolCallPayload, ToolDefinition } from "../../types/context.js";
+import { ChatMessage, StreamingToolCall, ToolDefinition } from "../../types/context.js";
 import { LLMAdapter } from "./base.adapter.js";
 
 /**
@@ -35,7 +35,7 @@ export class AnthropicAdapter implements LLMAdapter {
   public async *chatStream(
     messages: ChatMessage[],
     tools?: ToolDefinition[]
-  ): AsyncIterable<string | ToolCallPayload> {
+  ): AsyncIterable<string | StreamingToolCall> {
     try {
       // 转换消息格式为 Anthropic 格式
       const anthropicMessages = this.convertMessages(messages);
@@ -109,7 +109,7 @@ export class AnthropicAdapter implements LLMAdapter {
                       tool_call_id: parsed.delta.id,
                       name: parsed.delta.name,
                       arguments: parsed.delta.input,
-                    } as ToolCallPayload;
+                    };
                   }
                   break;
 
@@ -121,7 +121,7 @@ export class AnthropicAdapter implements LLMAdapter {
                       tool_call_id: parsed.content_block.id,
                       name: parsed.content_block.name,
                       arguments: parsed.content_block.input,
-                    } as ToolCallPayload;
+                    };
                   }
                   break;
               }

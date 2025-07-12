@@ -2,7 +2,7 @@
 // MCP Server Manager for handling multiple MCP connections
 
 import { EventEmitter } from "events";
-import { McpClient } from "./client";
+import { McpClient } from "./client.js";
 import {
   McpServerConfig,
   McpTool,
@@ -11,7 +11,7 @@ import {
   CallToolRequest,
   CallToolResult,
   McpConnectionStatus,
-} from "./types";
+} from "./types.js";
 
 export interface McpServerEntry {
   id: string;
@@ -60,12 +60,12 @@ export class McpManager extends EventEmitter {
     };
 
     // Set up event listeners
-    client.on("connection-status", (status) => {
+    client.on("connection-status", (status: any) => {
       serverEntry.status = status;
       this.emit("server-status-changed", { id, status });
     });
 
-    client.on("error", (error) => {
+    client.on("error", (error: any) => {
       serverEntry.lastError = error.message;
       this.emit("server-error", { id, error });
     });
@@ -117,7 +117,7 @@ export class McpManager extends EventEmitter {
    */
   public async connectAll(): Promise<void> {
     const promises = Array.from(this.servers.values()).map((server) =>
-      server.client.connect().catch((error) => {
+      server.client.connect().catch((error: any) => {
         console.error(`Failed to connect to MCP server ${server.id}:`, error);
       })
     );
@@ -158,7 +158,7 @@ export class McpManager extends EventEmitter {
       if (server.client.isConnected()) {
         try {
           const tools = await server.client.listTools();
-          tools.forEach((tool) => {
+          tools.forEach((tool: any) => {
             allTools.push({
               ...tool,
               serverId: server.id,
@@ -186,7 +186,7 @@ export class McpManager extends EventEmitter {
       if (server.client.isConnected()) {
         try {
           const resources = await server.client.listResources();
-          resources.forEach((resource) => {
+          resources.forEach((resource: any) => {
             allResources.push({
               ...resource,
               serverId: server.id,
@@ -214,7 +214,7 @@ export class McpManager extends EventEmitter {
       if (server.client.isConnected()) {
         try {
           const prompts = await server.client.listPrompts();
-          prompts.forEach((prompt) => {
+          prompts.forEach((prompt: any) => {
             allPrompts.push({
               ...prompt,
               serverId: server.id,
@@ -317,7 +317,7 @@ export class McpManager extends EventEmitter {
     };
 
     for (const server of this.servers.values()) {
-      summary[server.status]++;
+      (summary as any)[server.status]++;
     }
 
     return summary;

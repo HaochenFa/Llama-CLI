@@ -1,6 +1,6 @@
 // src/lib/adapters/base.adapter.ts
 
-import { ChatMessage, ToolCallPayload, ToolDefinition } from "../../types/context.js";
+import { ChatMessage, StreamingToolCall, ToolDefinition } from "../../types/context.js";
 
 /**
  * LLMAdapter 接口定义了与大型语言模型交互的通用契约。
@@ -15,5 +15,17 @@ export interface LLMAdapter {
   chatStream(
     messages: ChatMessage[],
     tools?: ToolDefinition[]
-  ): AsyncIterable<string | ToolCallPayload>;
+  ): AsyncIterable<string | StreamingToolCall>;
+
+  /**
+   * 获取当前使用的模型名称。
+   * @returns 模型名称字符串。
+   */
+  getModel(): string;
+
+  /**
+   * 获取服务提供商名称。
+   * @returns 服务名称字符串。
+   */
+  getServiceName?(): string;
 }

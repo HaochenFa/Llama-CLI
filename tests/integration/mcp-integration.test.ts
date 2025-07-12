@@ -1,11 +1,11 @@
 // tests/integration/mcp-integration.test.ts
 // Integration tests for MCP functionality
 
-import { ToolDispatcher } from "../../src/lib/tool-dispatcher";
-import { McpManager } from "../../src/lib/mcp/manager";
-import { McpConfigManager } from "../../src/lib/mcp/config";
-import { McpToolAdapter } from "../../src/lib/mcp/tool-adapter";
-import { initializeMcp, initializeMcpTools } from "../../src/lib/mcp-init";
+import { ToolDispatcher } from "../../src/lib/tool-dispatcher.js";
+import { McpManager } from "../../src/lib/mcp/manager.js";
+import { McpConfigManager } from "../../src/lib/mcp/config.js";
+import { McpToolAdapter } from "../../src/lib/mcp/tool-adapter.js";
+import { initializeMcp, initializeMcpTools } from "../../src/lib/mcp-init.js";
 
 describe("MCP Integration Tests", () => {
   let toolDispatcher: ToolDispatcher;
@@ -72,7 +72,7 @@ describe("MCP Integration Tests", () => {
 
       expect(toolDispatcher.availableTools.length).toBeGreaterThan(initialToolCount);
 
-      const mcpTools = toolDispatcher.availableTools.filter((t) => t.type === "mcp");
+      const mcpTools = toolDispatcher.availableTools.filter((t: any) => t.type === "mcp");
       expect(mcpTools.length).toBeGreaterThan(0);
     });
   });
@@ -100,7 +100,7 @@ describe("MCP Integration Tests", () => {
       const result = mcpConfigManager.validateServerConfig(invalidConfig);
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors.some((e) => e.includes("Command is required"))).toBe(true);
+      expect(result.errors.some((e: any) => e.includes("Command is required"))).toBe(true);
     });
 
     it("should validate environment variables", () => {
@@ -111,7 +111,7 @@ describe("MCP Integration Tests", () => {
 
       const result = mcpConfigManager.validateServerConfig(invalidConfig);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes("must be a string"))).toBe(true);
+      expect(result.errors.some((e: any) => e.includes("must be a string"))).toBe(true);
     });
   });
 
@@ -126,7 +126,7 @@ describe("MCP Integration Tests", () => {
 
       const server = mcpManager.getServer("test-server");
       expect(server).toBeDefined();
-      expect(server.name).toBe("Test Server");
+      expect(server?.name).toBe("Test Server");
 
       await mcpManager.removeServer("test-server");
 

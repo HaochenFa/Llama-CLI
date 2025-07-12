@@ -1,9 +1,15 @@
 import { Command } from "commander";
-import { ConfigStore, LLMProfile } from "../lib/config-store.js";
+import { ConfigStore } from "../lib/config-store.js";
 import { ContextCompiler } from "../lib/context-compiler.js";
 import { AdapterFactory } from "../lib/adapters/adapter-factory.js";
 import { ToolDispatcher } from "../lib/tool-dispatcher.js";
-import { InternalContext, ChatMessage, ToolCallPayload } from "../types/context.js";
+import {
+  InternalContext,
+  ChatMessage,
+  ToolCallPayload,
+  StreamingToolCall,
+  ToolCall,
+} from "../types/context.js";
 import chalk from "chalk";
 import * as crypto from "crypto";
 
@@ -52,12 +58,12 @@ export function registerChatCommand(program: Command) {
 
       const systemPrompt = contextCompiler.compile(internalContext);
 
-      let messages: ChatMessage[] = [
+      const messages: ChatMessage[] = [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ];
 
-      let currentMessages = [...messages];
+      const currentMessages = [...messages];
       let loopCount = 0;
       const MAX_LOOP_COUNT = 10;
 
@@ -67,6 +73,7 @@ export function registerChatCommand(program: Command) {
         }
         let assistantResponseContent = "";
         let toolCallPayload: ToolCallPayload | null = null;
+        const streamingToolCalls: StreamingToolCall[] = [];
 
         try {
           for await (const chunk of llmAdapter.chatStream(
@@ -76,9 +83,26 @@ export function registerChatCommand(program: Command) {
             if (typeof chunk === "string") {
               assistantResponseContent += chunk;
               process.stdout.write(chunk); // Stream output in real-time
-            } else if (typeof chunk === "object" && chunk.type === "tool_calls") {
-              toolCallPayload = chunk;
+            } else if (typeof chunk === "object" && chunk.type === "tool_call") {
+              streamingToolCalls.push(chunk);
             }
+          }
+
+          // Convert streaming tool calls to ToolCallPayload format
+          if (streamingToolCalls.length > 0) {
+            const toolCalls: ToolCall[] = streamingToolCalls.map((stc) => ({
+              id: stc.tool_call_id,
+              type: "function" as const,
+              function: {
+                name: stc.name,
+                arguments: stc.arguments,
+              },
+            }));
+
+            toolCallPayload = {
+              type: "tool_calls",
+              tool_calls: toolCalls,
+            };
           }
 
           // Add a newline at the end if we had content

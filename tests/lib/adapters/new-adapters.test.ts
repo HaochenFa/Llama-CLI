@@ -148,7 +148,7 @@ describe("New LLM Adapters", () => {
       const adapter = AdapterFactory.createAdapter(profile);
       expect(adapter).toBeInstanceOf(OpenAICompatibleAdapter);
       expect(adapter.getModel()).toBe("meta-llama/Llama-2-70b-chat-hf");
-      expect(adapter.getServiceName()).toBe("Together AI");
+      expect(adapter.getServiceName?.()).toBe("Together AI");
     });
 
     it("should work without API key for local services", () => {
@@ -176,7 +176,7 @@ describe("New LLM Adapters", () => {
       const adapter = AdapterFactory.createAdapter(profile);
       expect(adapter).toBeInstanceOf(OpenAICompatibleAdapter);
       expect(adapter.getModel()).toBe("default");
-      expect(adapter.getServiceName()).toBe("OpenAI-Compatible");
+      expect(adapter.getServiceName?.()).toBe("OpenAI-Compatible");
     });
   });
 

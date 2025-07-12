@@ -1,7 +1,7 @@
 // src/lib/adapters/ollama.adapter.ts
 
 import axios, { AxiosResponse } from "axios";
-import { ChatMessage, ToolCallPayload, ToolDefinition } from "../../types/context.js"; // 导入 ToolDefinition
+import { ChatMessage, StreamingToolCall, ToolDefinition } from "../../types/context.js"; // 导入 ToolDefinition
 import { LLMAdapter } from "./base.adapter.js";
 
 /**
@@ -11,10 +11,12 @@ import { LLMAdapter } from "./base.adapter.js";
 export class OllamaAdapter implements LLMAdapter {
   private ollamaEndpoint: string;
   private debug: boolean;
+  private model: string;
 
-  constructor(endpoint: string, debug: boolean = false) {
+  constructor(endpoint: string, debug: boolean = false, model: string = "llama3.2:3b") {
     this.ollamaEndpoint = endpoint;
     this.debug = debug;
+    this.model = model;
   }
 
   /**
@@ -25,10 +27,10 @@ export class OllamaAdapter implements LLMAdapter {
   public async *chatStream(
     messages: ChatMessage[],
     tools?: ToolDefinition[]
-  ): AsyncIterable<string | ToolCallPayload> {
+  ): AsyncIterable<string | StreamingToolCall> {
     try {
       const payload = {
-        model: "llama3.2:3b", // 默认使用 deepseek-r1:8b-0528-qwen3-q4_K_M 模型
+        model: this.model,
         messages: messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -78,7 +80,16 @@ export class OllamaAdapter implements LLMAdapter {
                   yield data.message.content;
                 }
                 if (data.message?.tool_calls && data.message.tool_calls.length > 0) {
-                  yield { type: "tool_calls", tool_calls: data.message.tool_calls };
+                  for (const toolCall of data.message.tool_calls) {
+                    yield {
+                      type: "tool_call",
+                      tool_call_id:
+                        toolCall.id ||
+                        `call_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                      name: toolCall.function?.name || toolCall.name,
+                      arguments: toolCall.function?.arguments || toolCall.arguments || {},
+                    };
+                  }
                 }
               } else if (data.done === true) {
                 // 结束标志，可以处理最终的统计信息等
@@ -139,5 +150,12 @@ export class OllamaAdapter implements LLMAdapter {
         };
       }
     }
+  }
+
+  /**
+   * 获取当前配置的模型名称
+   */
+  public getModel(): string {
+    return this.model;
   }
 }

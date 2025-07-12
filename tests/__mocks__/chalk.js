@@ -1,4 +1,5 @@
 // Mock for chalk module to avoid ESM import issues in Jest
+
 const chalk = {
   red: (text) => text,
   green: (text) => text,

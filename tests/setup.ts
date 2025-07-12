@@ -23,7 +23,6 @@ afterEach(() => {
 
 // Global test utilities
 export const mockLLMResponse = (responses: string[]) => {
-  let responseIndex = 0;
   return {
     async *chatStream() {
       for (const response of responses) {

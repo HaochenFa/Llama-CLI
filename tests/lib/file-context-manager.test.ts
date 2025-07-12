@@ -1,8 +1,8 @@
 // tests/lib/file-context-manager.test.ts
 
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
-import { FileContextManager } from "../../src/lib/file-context-manager";
-import { FileContext } from "../../src/types/context";
+import { FileContextManager } from "../../src/lib/file-context-manager.js";
+import { FileContext } from "../../src/types/context.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -197,11 +197,11 @@ describe("FileContextManager", () => {
 
       // For 'src/', basePath will be testWorkingDir and fileName will be 'src'
       // So we need to mock testWorkingDir to contain a 'src' directory
-      mockFs.existsSync.mockImplementation((dirPath: string) => {
+      mockFs.existsSync.mockImplementation((dirPath: any) => {
         return dirPath === testWorkingDir;
       });
 
-      mockFs.readdirSync.mockImplementation((dirPath: string) => {
+      mockFs.readdirSync.mockImplementation((dirPath: any) => {
         if (dirPath === testWorkingDir) {
           return [
             { name: "src", isDirectory: () => true },
@@ -238,11 +238,11 @@ describe("FileContextManager", () => {
     it("should skip hidden files", () => {
       const partial = "src/";
 
-      mockFs.existsSync.mockImplementation((dirPath: string) => {
+      mockFs.existsSync.mockImplementation((dirPath: any) => {
         return dirPath === testWorkingDir;
       });
 
-      mockFs.readdirSync.mockImplementation((dirPath: string) => {
+      mockFs.readdirSync.mockImplementation((dirPath: any) => {
         if (dirPath === testWorkingDir) {
           return [
             { name: "src", isDirectory: () => true },

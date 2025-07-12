@@ -36,8 +36,8 @@ describe("MCP Manager", () => {
     }));
 
     // Dynamically import after mocking
-    const mcpModule = await import("../../../src/lib/mcp/manager");
-    const configModule = await import("../../../src/lib/mcp/config");
+    const mcpModule = await import("../../../src/lib/mcp/manager.js");
+    const configModule = await import("../../../src/lib/mcp/config.js");
 
     McpManager = mcpModule.McpManager;
     McpConfigManager = configModule.McpConfigManager;
@@ -93,8 +93,8 @@ describe("MCP Manager", () => {
 
       const servers = manager.getServers();
       expect(servers).toHaveLength(2);
-      expect(servers.map((s) => s.id)).toContain("server1");
-      expect(servers.map((s) => s.id)).toContain("server2");
+      expect(servers.map((s: any) => s.id)).toContain("server1");
+      expect(servers.map((s: any) => s.id)).toContain("server2");
     });
 
     it("should get connection summary", () => {
@@ -147,7 +147,7 @@ describe("MCP Config Manager", () => {
       tmpdir: jest.fn().mockReturnValue("/tmp"),
     }));
 
-    const configModule = await import("../../../src/lib/mcp/config");
+    const configModule = await import("../../../src/lib/mcp/config.js");
     McpConfigManager = configModule.McpConfigManager;
     configManager = new McpConfigManager();
   });

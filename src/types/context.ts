@@ -36,6 +36,17 @@ export interface ToolCall {
 }
 
 /**
+ * 定义单个流式工具调用的结构。
+ * 用于适配器中的流式响应。
+ */
+export interface StreamingToolCall {
+  type: "tool_call";
+  tool_call_id: string;
+  name: string;
+  arguments: any;
+}
+
+/**
  * 定义从 LLM 返回的工具调用负载。
  */
 export interface ToolCallPayload {

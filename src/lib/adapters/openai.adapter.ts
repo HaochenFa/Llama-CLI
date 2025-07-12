@@ -1,7 +1,7 @@
 // src/lib/adapters/openai.adapter.ts
 
 import axios, { AxiosResponse } from "axios";
-import { ChatMessage, ToolCallPayload, ToolDefinition } from "../../types/context.js";
+import { ChatMessage, StreamingToolCall, ToolDefinition } from "../../types/context.js";
 import { LLMAdapter } from "./base.adapter.js";
 
 /**
@@ -35,7 +35,7 @@ export class OpenAIAdapter implements LLMAdapter {
   public async *chatStream(
     messages: ChatMessage[],
     tools?: ToolDefinition[]
-  ): AsyncIterable<string | ToolCallPayload> {
+  ): AsyncIterable<string | StreamingToolCall> {
     try {
       // 构建 OpenAI API 请求负载
       const payload: any = {
@@ -124,7 +124,7 @@ export class OpenAIAdapter implements LLMAdapter {
                         tool_call_id: toolCall.id,
                         name: toolCall.function.name,
                         arguments: args,
-                      } as ToolCallPayload;
+                      };
                     } catch (e) {
                       console.warn(
                         "Failed to parse tool call arguments:",

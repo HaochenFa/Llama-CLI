@@ -4,7 +4,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { McpServerConfig } from "./types";
+import { McpServerConfig } from "./types.js";
 
 export interface McpConfigEntry {
   id: string;
