@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { FileContext } from '../types/context.js';
-import chalk from 'chalk';
+import * as fs from "fs";
+import * as path from "path";
+import { FileContext } from "../types/context.js";
+import chalk from "chalk";
 
 export class FileContextManager {
   private workingDirectory: string;
@@ -15,7 +15,7 @@ export class FileContextManager {
    * @param input 用户输入的文本
    * @returns 解析后的文件路径数组和清理后的文本
    */
-  public parseAtSyntax(input: string): { filePaths: string[], cleanedInput: string } {
+  public parseAtSyntax(input: string): { filePaths: string[]; cleanedInput: string } {
     const atPattern = /@([^\s]+)/g;
     const filePaths: string[] = [];
     let match;
@@ -25,7 +25,7 @@ export class FileContextManager {
     }
 
     // 移除 @-语法，保留清理后的文本
-    const cleanedInput = input.replace(atPattern, '').trim();
+    const cleanedInput = input.replace(atPattern, "").trim();
 
     return { filePaths, cleanedInput };
   }
@@ -38,8 +38,8 @@ export class FileContextManager {
   public async loadFile(filePath: string): Promise<FileContext | null> {
     try {
       // 处理相对路径
-      const absolutePath = path.isAbsolute(filePath) 
-        ? filePath 
+      const absolutePath = path.isAbsolute(filePath)
+        ? filePath
         : path.resolve(this.workingDirectory, filePath);
 
       // 检查文件是否存在
@@ -58,18 +58,19 @@ export class FileContextManager {
       // 检查文件大小（限制为 1MB）
       const maxSize = 1024 * 1024; // 1MB
       if (stats.size > maxSize) {
-        console.log(chalk.yellow(`⚠️  File too large (${Math.round(stats.size / 1024)}KB > 1MB): ${filePath}`));
+        console.log(
+          chalk.yellow(`⚠️  File too large (${Math.round(stats.size / 1024)}KB > 1MB): ${filePath}`)
+        );
         return null;
       }
 
       // 读取文件内容
-      const content = fs.readFileSync(absolutePath, 'utf-8');
+      const content = fs.readFileSync(absolutePath, "utf-8");
 
       return {
         path: absolutePath,
-        content: content
+        content: content,
       };
-
     } catch (error) {
       console.log(chalk.red(`❌ Error reading file ${filePath}: ${(error as Error).message}`));
       return null;
@@ -103,10 +104,10 @@ export class FileContextManager {
   public getFileCompletions(partial: string): string[] {
     try {
       // 处理相对路径
-      const basePath = path.isAbsolute(partial) 
+      const basePath = path.isAbsolute(partial)
         ? path.dirname(partial)
         : path.resolve(this.workingDirectory, path.dirname(partial));
-      
+
       const fileName = path.basename(partial);
 
       // 检查目录是否存在
@@ -116,27 +117,26 @@ export class FileContextManager {
 
       // 读取目录内容
       const entries = fs.readdirSync(basePath, { withFileTypes: true });
-      
+
       // 过滤匹配的文件和目录
       const matches = entries
-        .filter(entry => {
+        .filter((entry) => {
           // 跳过隐藏文件（以 . 开头）
-          if (entry.name.startsWith('.')) return false;
-          
+          if (entry.name.startsWith(".")) return false;
+
           // 检查是否匹配部分文件名
           return entry.name.toLowerCase().startsWith(fileName.toLowerCase());
         })
-        .map(entry => {
+        .map((entry) => {
           const fullPath = path.join(basePath, entry.name);
           const relativePath = path.relative(this.workingDirectory, fullPath);
-          
+
           // 如果是目录，添加 / 后缀
-          return entry.isDirectory() ? relativePath + '/' : relativePath;
+          return entry.isDirectory() ? relativePath + "/" : relativePath;
         })
         .slice(0, 10); // 限制最多 10 个建议
 
       return matches;
-
     } catch (error) {
       return [];
     }
@@ -149,11 +149,11 @@ export class FileContextManager {
    * @returns 是否已存在
    */
   public isFileInContext(filePath: string, existingContext: FileContext[]): boolean {
-    const absolutePath = path.isAbsolute(filePath) 
-      ? filePath 
+    const absolutePath = path.isAbsolute(filePath)
+      ? filePath
       : path.resolve(this.workingDirectory, filePath);
 
-    return existingContext.some(file => file.path === absolutePath);
+    return existingContext.some((file) => file.path === absolutePath);
   }
 
   /**
@@ -163,11 +163,11 @@ export class FileContextManager {
    * @returns 更新后的文件上下文数组
    */
   public removeFileFromContext(filePath: string, existingContext: FileContext[]): FileContext[] {
-    const absolutePath = path.isAbsolute(filePath) 
-      ? filePath 
+    const absolutePath = path.isAbsolute(filePath)
+      ? filePath
       : path.resolve(this.workingDirectory, filePath);
 
-    return existingContext.filter(file => file.path !== absolutePath);
+    return existingContext.filter((file) => file.path !== absolutePath);
   }
 
   /**
@@ -185,16 +185,39 @@ export class FileContextManager {
    */
   public getSupportedFileTypes(): string[] {
     return [
-      '.js', '.ts', '.jsx', '.tsx',
-      '.py', '.java', '.cpp', '.c', '.h',
-      '.go', '.rs', '.php', '.rb',
-      '.html', '.css', '.scss', '.less',
-      '.json', '.yaml', '.yml', '.xml',
-      '.md', '.txt', '.log',
-      '.sh', '.bash', '.zsh',
-      '.sql', '.graphql',
-      '.dockerfile', '.gitignore',
-      '.env', '.config'
+      ".js",
+      ".ts",
+      ".jsx",
+      ".tsx",
+      ".py",
+      ".java",
+      ".cpp",
+      ".c",
+      ".h",
+      ".go",
+      ".rs",
+      ".php",
+      ".rb",
+      ".html",
+      ".css",
+      ".scss",
+      ".less",
+      ".json",
+      ".yaml",
+      ".yml",
+      ".xml",
+      ".md",
+      ".txt",
+      ".log",
+      ".sh",
+      ".bash",
+      ".zsh",
+      ".sql",
+      ".graphql",
+      ".dockerfile",
+      ".gitignore",
+      ".env",
+      ".config",
     ];
   }
 
@@ -206,14 +229,14 @@ export class FileContextManager {
   public isSupportedFileType(filePath: string): boolean {
     const ext = path.extname(filePath).toLowerCase();
     const supportedTypes = this.getSupportedFileTypes();
-    
+
     // 如果没有扩展名，检查是否为常见的无扩展名文件
     if (!ext) {
       const fileName = path.basename(filePath).toLowerCase();
-      const commonFiles = ['dockerfile', 'makefile', 'readme', 'license', 'changelog'];
-      return commonFiles.some(common => fileName.includes(common));
+      const commonFiles = ["dockerfile", "makefile", "readme", "license", "changelog"];
+      return commonFiles.some((common) => fileName.includes(common));
     }
-    
+
     return supportedTypes.includes(ext);
   }
 }

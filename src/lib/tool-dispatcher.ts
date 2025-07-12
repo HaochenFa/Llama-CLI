@@ -1,110 +1,124 @@
 // src/lib/tool-dispatcher.ts
+// Unified Tool Dispatcher - All tools are handled through MCP protocol
 
-import { ToolDefinition, ChatMessage } from '../types/context.js';
-import { read_file_tool } from './tools/read_file';
-import { write_file_tool } from './tools/write_file';
-import { search_files_tool } from './tools/search_files';
-import { delete_file_tool } from './tools/delete_file';
-import { web_search_tool } from './tools/web_search';
-import { mcp_manager_tool, getMcpManager, getMcpToolAdapter } from './tools/mcp_manager';
-import Ajv from 'ajv';
+import { ToolDefinition, ChatMessage } from "../types/context.js";
+import { UnifiedMcpManager } from "./mcp/unified-manager.js";
+import Ajv from "ajv";
 
 const ajv = new Ajv();
 
 /**
- * ToolDispatcher 负责根据 LLM 的指令调度和执行工具。
+ * Unified ToolDispatcher - All tools are handled through MCP protocol
+ * This eliminates the distinction between native, MCP, and OpenAPI tools
  */
 export class ToolDispatcher {
-  public availableTools: ToolDefinition[];
-  private nativeTools: ToolDefinition[];
-  private mcpToolsLoaded: boolean = false;
+  public availableTools: ToolDefinition[] = [];
+  private mcpManager: UnifiedMcpManager;
+  private isInitialized: boolean = false;
 
-  constructor(tools: ToolDefinition[]) {
-    // 注册所有可用的 native 工具
-    this.nativeTools = [
-      read_file_tool,
-      write_file_tool,
-      search_files_tool,
-      delete_file_tool,
-      web_search_tool,
-      mcp_manager_tool,
-    ];
+  constructor(tools: ToolDefinition[] = []) {
+    this.mcpManager = new UnifiedMcpManager();
 
-    this.availableTools = [
-      ...this.nativeTools,
-      ...tools.filter(t => t.type !== 'native') // 过滤掉传入的 native 工具，因为我们已经手动注册了
-    ];
+    // Add any external tools passed in (though in the unified architecture,
+    // these should also be MCP-based)
+    this.availableTools = [...tools];
   }
 
   /**
-   * Load MCP tools from connected servers and add them to available tools
+   * Initialize the tool dispatcher and load all tools
    */
-  public async loadMcpTools(): Promise<void> {
+  public async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
     try {
-      const mcpToolAdapter = getMcpToolAdapter();
-      if (mcpToolAdapter) {
-        const mcpTools = await mcpToolAdapter.getToolDefinitions();
+      // Initialize the unified MCP manager
+      await this.mcpManager.initialize();
 
-        // Remove existing MCP tools and add new ones
-        this.availableTools = this.availableTools.filter(t => t.type !== 'mcp');
-        this.availableTools.push(...mcpTools);
+      // Load all tools from all MCP servers (including built-in)
+      await this.refreshTools();
 
-        this.mcpToolsLoaded = true;
-        console.log(`Loaded ${mcpTools.length} MCP tools`);
-      }
+      this.isInitialized = true;
+      console.log(`ToolDispatcher initialized with ${this.availableTools.length} tools`);
     } catch (error) {
-      console.error('Failed to load MCP tools:', error);
+      console.error("Failed to initialize ToolDispatcher:", error);
+      throw error;
     }
   }
 
   /**
-   * Refresh all tools including MCP tools
+   * Refresh all tools from all MCP servers
    */
   public async refreshTools(): Promise<void> {
-    await this.loadMcpTools();
+    try {
+      // Get all tools from the unified MCP manager
+      const mcpTools = await this.mcpManager.getAllTools();
+
+      // Replace all tools with the latest from MCP servers
+      this.availableTools = mcpTools;
+
+      console.log(`Refreshed tools: ${this.availableTools.length} total`);
+    } catch (error) {
+      console.error("Failed to refresh tools:", error);
+    }
   }
 
   /**
-   * Get the count of available tools by type
+   * Get tool statistics (simplified since all tools are now MCP-based)
    */
-  public getToolStats(): { native: number; mcp: number; total: number } {
-    const nativeCount = this.availableTools.filter(t => t.type === 'native').length;
-    const mcpCount = this.availableTools.filter(t => t.type === 'mcp').length;
+  public getToolStats(): { builtin: number; external: number; total: number } {
+    const builtinCount = this.availableTools.filter((t) =>
+      t.description?.includes("[Built-in Tools]")
+    ).length;
+    const externalCount = this.availableTools.length - builtinCount;
 
     return {
-      native: nativeCount,
-      mcp: mcpCount,
-      total: this.availableTools.length
+      builtin: builtinCount,
+      external: externalCount,
+      total: this.availableTools.length,
     };
   }
 
   /**
-   * 根据工具调用指令调度并执行工具。
-   * @param toolCall LLM 返回的工具调用指令，例如 { name: "echo", arguments: { message: "hello" } }
-   * @param tool_call_id The ID of the tool call.
-   * @returns 工具执行的结果，通常是一个 ChatMessage 对象。
+   * Dispatch and execute a tool call through the unified MCP protocol
+   * @param toolCall LLM tool call instruction, e.g., { name: "read_file", arguments: { absolute_path: "/path/to/file" } }
+   * @param tool_call_id The ID of the tool call
+   * @returns Tool execution result as a ChatMessage object
    */
-  public async dispatch(toolCall: { name: string; arguments: any }, tool_call_id: string): Promise<ChatMessage> {
-    const tool = this.availableTools.find(t => t.name === toolCall.name);
+  public async dispatch(
+    toolCall: { name: string; arguments: any },
+    tool_call_id: string
+  ): Promise<ChatMessage> {
+    // Ensure dispatcher is initialized
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const tool = this.availableTools.find((t) => t.name === toolCall.name);
 
     if (!tool) {
       return {
-        role: 'tool',
+        role: "tool",
         tool_call_id,
-        content: `Error: Tool '${toolCall.name}' not found.`,
+        content: `Error: Tool '${toolCall.name}' not found. Available tools: ${this.availableTools
+          .map((t) => t.name)
+          .join(", ")}`,
       };
     }
 
     // Parse string arguments if needed
     let parsedArguments = toolCall.arguments;
-    if (typeof toolCall.arguments === 'string') {
+    if (typeof toolCall.arguments === "string") {
       try {
         parsedArguments = JSON.parse(toolCall.arguments);
       } catch (error) {
         return {
-          role: 'tool',
+          role: "tool",
           tool_call_id,
-          content: `Error: Invalid JSON in arguments for tool '${toolCall.name}': ${(error as Error).message}`,
+          content: `Error: Invalid JSON in arguments for tool '${toolCall.name}': ${
+            (error as Error).message
+          }`,
         };
       }
     }
@@ -115,72 +129,68 @@ export class ToolDispatcher {
       const validate = ajv.compile(schema);
       if (!validate(parsedArguments)) {
         return {
-          role: 'tool',
+          role: "tool",
           tool_call_id,
-          content: `Error: Invalid arguments for tool '${toolCall.name}'. Details: ${ajv.errorsText(validate.errors)}`,
+          content: `Error: Invalid arguments for tool '${toolCall.name}'. Details: ${ajv.errorsText(
+            validate.errors
+          )}`,
         };
       }
     }
 
-    switch (tool.type) {
-      case 'native':
-        if (tool.invoke) {
-          try {
-            const result = await tool.invoke(parsedArguments);
-            return {
-              role: 'tool',
-              tool_call_id,
-              content: typeof result === 'string' ? result : JSON.stringify(result),
-            };
-          } catch (error: any) {
-            return {
-              role: 'tool',
-              tool_call_id,
-              content: `Error executing native tool '${tool.name}': ${(error as Error).message}`,
-            };
-          }
-        } else {
-          return {
-            role: 'tool',
-            tool_call_id,
-            content: `Error: Native tool '${tool.name}' has no invoke method.`,
-          };
-        }
-      case 'openapi':
-        return {
-          role: 'tool',
-          tool_call_id,
-          content: `Error: OpenAPI tool '${tool.name}' not yet implemented.`,
-        };
-      case 'mcp':
-        if (tool.invoke) {
-          try {
-            const result = await tool.invoke(parsedArguments);
-            return {
-              role: 'tool',
-              tool_call_id,
-              content: typeof result === 'string' ? result : JSON.stringify(result),
-            };
-          } catch (error: any) {
-            return {
-              role: 'tool',
-              tool_call_id,
-              content: `Error executing MCP tool '${tool.name}': ${(error as Error).message}`,
-            };
-          }
-        } else {
-          return {
-            role: 'tool',
-            tool_call_id,
-            content: `Error: MCP tool '${tool.name}' has no invoke method.`,
-          };
-        }
-      default:
-        return {
-          role: 'tool',
-          tool_call_id,
-          content: `Error: Unknown tool type '${tool.type}' for tool '${tool.name}'.`,
-        };
+    // Execute tool through unified MCP protocol
+    // All tools are now MCP-based, so we use a single execution path
+    try {
+      const result = await this.mcpManager.callTool(toolCall.name, parsedArguments);
+
+      return {
+        role: "tool",
+        tool_call_id,
+        content: typeof result === "string" ? result : JSON.stringify(result),
+      };
+    } catch (error: any) {
+      return {
+        role: "tool",
+        tool_call_id,
+        content: `Error executing tool '${toolCall.name}': ${(error as Error).message}`,
+      };
     }
+  }
+
+  /**
+   * Add an external MCP server
+   */
+  public async addMcpServer(id: string, name: string, config: any): Promise<void> {
+    await this.mcpManager.addExternalServer(id, name, config);
+    await this.refreshTools();
+  }
+
+  /**
+   * Remove an external MCP server
+   */
+  public async removeMcpServer(id: string): Promise<void> {
+    await this.mcpManager.removeServer(id);
+    await this.refreshTools();
+  }
+
+  /**
+   * Get MCP connection summary
+   */
+  public getMcpConnectionSummary(): string {
+    return this.mcpManager.getConnectionSummary();
+  }
+
+  /**
+   * Get the unified MCP manager (for advanced operations)
+   */
+  public getMcpManager(): UnifiedMcpManager {
+    return this.mcpManager;
+  }
+
+  /**
+   * Health check for all MCP servers
+   */
+  public async healthCheck(): Promise<{ [serverId: string]: boolean }> {
+    return await this.mcpManager.healthCheck();
   }
 }

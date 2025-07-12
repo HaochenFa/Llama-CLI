@@ -1,6 +1,6 @@
 // src/lib/context-compiler.ts
 
-import {InternalContext, ChatMessage, FileContext, ToolDefinition} from '../types/context.js';
+import { InternalContext, ChatMessage, FileContext, ToolDefinition } from "../types/context.js";
 
 /**
  * 上下文编译器，负责将 InternalContext 压平为 LLM 的系统提示。
@@ -39,41 +39,40 @@ When you decide to use a tool, you MUST follow this exact workflow:
 `;
 
     // Environment Context
-    systemPrompt += '## Environment Context\n';
+    systemPrompt += "## Environment Context\n";
     systemPrompt += `Current Working Directory: ${context.current_working_directory}\n\n`;
-
 
     // 1. 添加长期记忆
     if (context.long_term_memory && context.long_term_memory.length > 0) {
-      systemPrompt += '## Long-Term Memory:\n';
+      systemPrompt += "## Long-Term Memory:\n";
       context.long_term_memory.forEach((memory: string) => {
         systemPrompt += `- ${memory}\n`;
       });
-      systemPrompt += '\n';
+      systemPrompt += "\n";
     }
 
     // 2. 添加可用工具定义
     if (context.available_tools && context.available_tools.length > 0) {
-      systemPrompt += '## Available Tools:\n';
+      systemPrompt += "## Available Tools:\n";
       context.available_tools.forEach((tool: ToolDefinition) => {
         systemPrompt += `### Tool: ${tool.name}\n`;
         systemPrompt += `Description: ${tool.description}\n`;
         if (tool.schema) {
           systemPrompt += `Schema: ${JSON.stringify(tool.schema, null, 2)}\n`;
         }
-        systemPrompt += '\n';
+        systemPrompt += "\n";
       });
-      systemPrompt += '\n';
+      systemPrompt += "\n";
     }
 
     // 3. 添加文件上下文
     if (context.file_context && context.file_context.length > 0) {
-      systemPrompt += '## File Context:\n';
+      systemPrompt += "## File Context:\n";
       context.file_context.forEach((file: FileContext) => {
         systemPrompt += `### File: ${file.path}\n`;
-        systemPrompt += '```\n';
+        systemPrompt += "```\n";
         systemPrompt += `${file.content}\n`;
-        systemPrompt += '```\n\n';
+        systemPrompt += "```\n\n";
       });
     }
 
