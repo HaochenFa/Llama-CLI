@@ -1,10 +1,10 @@
 // tests/lib/config-store.test.ts
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import * as path from 'path';
-import * as os from 'os';
+import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
+import * as path from "path";
+import * as os from "os";
 
-describe('ConfigStore', () => {
+describe("ConfigStore", () => {
   let ConfigStore: any;
   let LLMProfile: any;
   let configStore: any;
@@ -14,11 +14,11 @@ describe('ConfigStore', () => {
 
   beforeEach(async () => {
     // Create a temporary config path for testing
-    tempConfigPath = path.join(os.tmpdir(), 'llamacli-test-config.json');
+    tempConfigPath = path.join(os.tmpdir(), "llamacli-test-config.json");
 
     mockConfig = {
       profiles: {},
-      currentProfile: null
+      currentProfile: null,
     };
 
     // Mock fs module with stateful behavior
@@ -34,14 +34,14 @@ describe('ConfigStore', () => {
     };
 
     // Mock the modules
-    jest.doMock('fs', () => mockFs);
-    jest.doMock('os', () => ({
+    jest.doMock("fs", () => mockFs);
+    jest.doMock("os", () => ({
       homedir: jest.fn().mockReturnValue(os.tmpdir()),
-      tmpdir: jest.fn().mockReturnValue('/tmp')
+      tmpdir: jest.fn().mockReturnValue("/tmp"),
     }));
 
     // Dynamically import the module after mocking
-    const configModule = await import('../../src/lib/config-store');
+    const configModule = await import("../../src/lib/config-store");
     ConfigStore = configModule.ConfigStore;
     LLMProfile = configModule.LLMProfile;
 
@@ -53,133 +53,133 @@ describe('ConfigStore', () => {
     jest.clearAllMocks();
   });
 
-  describe('Profile Management', () => {
-    it('should add a new profile', () => {
+  describe("Profile Management", () => {
+    it("should add a new profile", () => {
       const profile = {
-        name: 'test-ollama',
-        type: 'ollama',
-        endpoint: 'http://localhost:11434'
+        name: "test-ollama",
+        type: "ollama",
+        endpoint: "http://localhost:11434",
       };
 
       configStore.setProfile(profile);
 
       expect(mockFs.writeFileSync).toHaveBeenCalled();
-      const savedProfile = configStore.getProfile('test-ollama');
+      const savedProfile = configStore.getProfile("test-ollama");
       expect(savedProfile).toEqual(profile);
     });
 
-    it('should update an existing profile', () => {
+    it("should update an existing profile", () => {
       const profile = {
-        name: 'test-ollama',
-        type: 'ollama',
-        endpoint: 'http://localhost:11434'
+        name: "test-ollama",
+        type: "ollama",
+        endpoint: "http://localhost:11434",
       };
 
       configStore.setProfile(profile);
 
       const updatedProfile = {
         ...profile,
-        endpoint: 'http://localhost:11435'
+        endpoint: "http://localhost:11435",
       };
 
       configStore.setProfile(updatedProfile);
 
-      const savedProfile = configStore.getProfile('test-ollama');
-      expect(savedProfile?.endpoint).toBe('http://localhost:11435');
+      const savedProfile = configStore.getProfile("test-ollama");
+      expect(savedProfile?.endpoint).toBe("http://localhost:11435");
     });
 
-    it('should delete a profile', () => {
+    it("should delete a profile", () => {
       const profile = {
-        name: 'test-ollama',
-        type: 'ollama',
-        endpoint: 'http://localhost:11434'
+        name: "test-ollama",
+        type: "ollama",
+        endpoint: "http://localhost:11434",
       };
 
       configStore.setProfile(profile);
-      expect(configStore.getProfile('test-ollama')).toBeTruthy();
+      expect(configStore.getProfile("test-ollama")).toBeTruthy();
 
-      const deleted = configStore.deleteProfile('test-ollama');
+      const deleted = configStore.deleteProfile("test-ollama");
       expect(deleted).toBe(true);
-      expect(configStore.getProfile('test-ollama')).toBeUndefined();
+      expect(configStore.getProfile("test-ollama")).toBeUndefined();
     });
 
-    it('should return false when deleting non-existent profile', () => {
-      const deleted = configStore.deleteProfile('non-existent');
+    it("should return false when deleting non-existent profile", () => {
+      const deleted = configStore.deleteProfile("non-existent");
       expect(deleted).toBe(false);
     });
 
-    it('should list all profiles', () => {
+    it("should list all profiles", () => {
       const profile1 = {
-        name: 'ollama-1',
-        type: 'ollama',
-        endpoint: 'http://localhost:11434'
+        name: "ollama-1",
+        type: "ollama",
+        endpoint: "http://localhost:11434",
       };
 
       const profile2 = {
-        name: 'vllm-1',
-        type: 'vllm',
-        endpoint: 'http://localhost:8000'
+        name: "vllm-1",
+        type: "vllm",
+        endpoint: "http://localhost:8000",
       };
 
       configStore.setProfile(profile1);
       configStore.setProfile(profile2);
 
       const profiles = configStore.listProfiles();
-      expect(profiles).toContain('ollama-1');
-      expect(profiles).toContain('vllm-1');
+      expect(profiles).toContain("ollama-1");
+      expect(profiles).toContain("vllm-1");
       expect(profiles).toHaveLength(2);
     });
   });
 
-  describe('Current Profile Management', () => {
-    it('should set and get current profile', () => {
+  describe("Current Profile Management", () => {
+    it("should set and get current profile", () => {
       const profile = {
-        name: 'test-ollama',
-        type: 'ollama',
-        endpoint: 'http://localhost:11434'
+        name: "test-ollama",
+        type: "ollama",
+        endpoint: "http://localhost:11434",
       };
 
       configStore.setProfile(profile);
-      const success = configStore.setCurrentProfile('test-ollama');
-      
+      const success = configStore.setCurrentProfile("test-ollama");
+
       expect(success).toBe(true);
-      
+
       const currentProfile = configStore.getCurrentProfile();
       expect(currentProfile).toEqual(profile);
     });
 
-    it('should return false when setting non-existent profile as current', () => {
-      const success = configStore.setCurrentProfile('non-existent');
+    it("should return false when setting non-existent profile as current", () => {
+      const success = configStore.setCurrentProfile("non-existent");
       expect(success).toBe(false);
     });
 
-    it('should return null when no current profile is set', () => {
+    it("should return null when no current profile is set", () => {
       const currentProfile = configStore.getCurrentProfile();
       expect(currentProfile).toBeUndefined();
     });
   });
 
-  describe('Config File Handling', () => {
-    it('should create config directory if it does not exist', async () => {
+  describe("Config File Handling", () => {
+    it("should create config directory if it does not exist", async () => {
       // Reset mocks for this specific test
       jest.resetModules();
 
       const mockFsForTest = {
         existsSync: jest.fn().mockReturnValue(false),
         readFileSync: jest.fn().mockImplementation(() => {
-          throw new Error('File not found');
+          throw new Error("File not found");
         }),
         writeFileSync: jest.fn(),
         mkdirSync: jest.fn(),
       };
 
-      jest.doMock('fs', () => mockFsForTest);
-      jest.doMock('os', () => ({
+      jest.doMock("fs", () => mockFsForTest);
+      jest.doMock("os", () => ({
         homedir: jest.fn().mockReturnValue(os.tmpdir()),
-        tmpdir: jest.fn().mockReturnValue('/tmp')
+        tmpdir: jest.fn().mockReturnValue("/tmp"),
       }));
 
-      const configModule = await import('../../src/lib/config-store');
+      const configModule = await import("../../src/lib/config-store");
       const TestConfigStore = configModule.ConfigStore;
 
       const store = new TestConfigStore();
@@ -189,42 +189,42 @@ describe('ConfigStore', () => {
       expect(mockFsForTest.mkdirSync).toHaveBeenCalled();
     });
 
-    it('should handle missing config file gracefully', () => {
+    it("should handle missing config file gracefully", () => {
       mockFs.existsSync.mockReturnValue(false);
       mockFs.readFileSync.mockImplementation(() => {
-        throw new Error('File not found');
+        throw new Error("File not found");
       });
 
       const store = new ConfigStore();
       const profiles = store.listProfiles();
-      
+
       expect(profiles).toEqual([]);
     });
 
-    it('should handle corrupted config file', () => {
-      mockFs.readFileSync.mockReturnValue('invalid json');
+    it("should handle corrupted config file", () => {
+      mockFs.readFileSync.mockReturnValue("invalid json");
 
       expect(() => new ConfigStore()).not.toThrow();
     });
   });
 
-  describe('Profile Validation', () => {
-    it('should accept valid ollama profile', () => {
+  describe("Profile Validation", () => {
+    it("should accept valid ollama profile", () => {
       const profile = {
-        name: 'valid-ollama',
-        type: 'ollama',
-        endpoint: 'http://localhost:11434'
+        name: "valid-ollama",
+        type: "ollama",
+        endpoint: "http://localhost:11434",
       };
 
       expect(() => configStore.setProfile(profile)).not.toThrow();
     });
 
-    it('should accept valid vllm profile', () => {
+    it("should accept valid vllm profile", () => {
       const profile = {
-        name: 'valid-vllm',
-        type: 'vllm',
-        endpoint: 'http://localhost:8000',
-        model: 'llama-2-7b'
+        name: "valid-vllm",
+        type: "vllm",
+        endpoint: "http://localhost:8000",
+        model: "llama-2-7b",
       };
 
       expect(() => configStore.setProfile(profile)).not.toThrow();
