@@ -1,9 +1,9 @@
 // src/lib/mcp/tool-adapter.ts
 // Adapter to integrate MCP tools with the existing tool system
 
-import { ToolDefinition } from '../../types/context';
-import { McpManager } from './manager';
-import { McpTool, CallToolResult } from './types';
+import { ToolDefinition } from "../../types/context";
+import { McpManager } from "./manager";
+import { McpTool, CallToolResult } from "./types";
 
 export class McpToolAdapter {
   private mcpManager: McpManager;
@@ -18,9 +18,9 @@ export class McpToolAdapter {
   public async getToolDefinitions(): Promise<ToolDefinition[]> {
     try {
       const mcpTools = await this.mcpManager.getAllTools();
-      return mcpTools.map(tool => this.convertMcpToolToDefinition(tool));
+      return mcpTools.map((tool) => this.convertMcpToolToDefinition(tool));
     } catch (error) {
-      console.error('Failed to get MCP tools:', error);
+      console.error("Failed to get MCP tools:", error);
       return [];
     }
   }
@@ -28,9 +28,11 @@ export class McpToolAdapter {
   /**
    * Convert a single MCP tool to ToolDefinition
    */
-  private convertMcpToolToDefinition(mcpTool: McpTool & { serverId: string; serverName: string }): ToolDefinition {
+  private convertMcpToolToDefinition(
+    mcpTool: McpTool & { serverId: string; serverName: string }
+  ): ToolDefinition {
     return {
-      type: 'mcp',
+      type: "mcp",
       name: `mcp_${mcpTool.serverId}_${mcpTool.name}`,
       description: `[${mcpTool.serverName}] ${mcpTool.description || mcpTool.name}`,
       parameters: mcpTool.inputSchema,
@@ -38,14 +40,14 @@ export class McpToolAdapter {
         try {
           const result = await this.mcpManager.callTool(mcpTool.serverId, {
             name: mcpTool.name,
-            arguments: args
+            arguments: args,
           });
 
           return this.formatMcpResult(result);
         } catch (error) {
           throw new Error(`MCP tool execution failed: ${(error as Error).message}`);
         }
-      }
+      },
     };
   }
 
@@ -54,20 +56,21 @@ export class McpToolAdapter {
    */
   private formatMcpResult(result: CallToolResult): string {
     if (result.isError) {
-      const errorMessage = result.content && result.content.length > 0
-        ? result.content.map(c => c.text || c.type).join(' ')
-        : 'Unknown error';
+      const errorMessage =
+        result.content && result.content.length > 0
+          ? result.content.map((c) => c.text || c.type).join(" ")
+          : "Unknown error";
       throw new Error(`MCP tool returned an error: ${errorMessage}`);
     }
 
     if (!result.content || result.content.length === 0) {
-      return 'Tool executed successfully (no content returned)';
+      return "Tool executed successfully (no content returned)";
     }
 
     const textContent = result.content
-      .filter(item => item.type === 'text' && item.text)
-      .map(item => item.text)
-      .join('\n');
+      .filter((item) => item.type === "text" && item.text)
+      .map((item) => item.text)
+      .join("\n");
 
     if (textContent) {
       return textContent;
@@ -75,20 +78,20 @@ export class McpToolAdapter {
 
     // Handle other content types
     const otherContent = result.content
-      .filter(item => item.type !== 'text')
-      .map(item => {
+      .filter((item) => item.type !== "text")
+      .map((item) => {
         switch (item.type) {
-          case 'image':
-            return `[Image: ${item.mimeType || 'unknown format'}]`;
-          case 'resource':
-            return `[Resource: ${item.mimeType || 'unknown format'}]`;
+          case "image":
+            return `[Image: ${item.mimeType || "unknown format"}]`;
+          case "resource":
+            return `[Resource: ${item.mimeType || "unknown format"}]`;
           default:
             return `[${item.type}: content available]`;
         }
       })
-      .join('\n');
+      .join("\n");
 
-    return otherContent || 'Tool executed successfully';
+    return otherContent || "Tool executed successfully";
   }
 
   /**
@@ -99,7 +102,7 @@ export class McpToolAdapter {
     const summary = this.mcpManager.getConnectionSummary();
 
     if (servers.length === 0) {
-      return 'No MCP servers configured';
+      return "No MCP servers configured";
     }
 
     const lines = [
@@ -108,11 +111,11 @@ export class McpToolAdapter {
       `  Connecting: ${summary.connecting}`,
       `  Disconnected: ${summary.disconnected}`,
       `  Error: ${summary.error}`,
-      '',
-      'Servers:'
+      "",
+      "Servers:",
     ];
 
-    servers.forEach(server => {
+    servers.forEach((server) => {
       const statusIcon = this.getStatusIcon(server.status);
       lines.push(`  ${statusIcon} ${server.name} (${server.id}) - ${server.status}`);
       if (server.lastError) {
@@ -120,7 +123,7 @@ export class McpToolAdapter {
       }
     });
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -128,11 +131,16 @@ export class McpToolAdapter {
    */
   private getStatusIcon(status: string): string {
     switch (status) {
-      case 'connected': return '🟢';
-      case 'connecting': return '🟡';
-      case 'disconnected': return '⚪';
-      case 'error': return '🔴';
-      default: return '❓';
+      case "connected":
+        return "🟢";
+      case "connecting":
+        return "🟡";
+      case "disconnected":
+        return "⚪";
+      case "error":
+        return "🔴";
+      default:
+        return "❓";
     }
   }
 
@@ -142,16 +150,16 @@ export class McpToolAdapter {
   public async getToolsSummary(): Promise<string> {
     try {
       const tools = await this.mcpManager.getAllTools();
-      
+
       if (tools.length === 0) {
-        return 'No MCP tools available';
+        return "No MCP tools available";
       }
 
       const lines = [`MCP Tools (${tools.length} available):`];
-      
+
       // Group tools by server
       const toolsByServer = new Map<string, typeof tools>();
-      tools.forEach(tool => {
+      tools.forEach((tool) => {
         if (!toolsByServer.has(tool.serverId)) {
           toolsByServer.set(tool.serverId, []);
         }
@@ -162,13 +170,13 @@ export class McpToolAdapter {
         const server = this.mcpManager.getServer(serverId);
         const serverName = server?.name || serverId;
         lines.push(`\n  ${serverName}:`);
-        
-        serverTools.forEach(tool => {
-          lines.push(`    • ${tool.name}: ${tool.description || 'No description'}`);
+
+        serverTools.forEach((tool) => {
+          lines.push(`    • ${tool.name}: ${tool.description || "No description"}`);
         });
       });
 
-      return lines.join('\n');
+      return lines.join("\n");
     } catch (error) {
       return `Error getting MCP tools: ${(error as Error).message}`;
     }
@@ -180,16 +188,16 @@ export class McpToolAdapter {
   public async getResourcesSummary(): Promise<string> {
     try {
       const resources = await this.mcpManager.getAllResources();
-      
+
       if (resources.length === 0) {
-        return 'No MCP resources available';
+        return "No MCP resources available";
       }
 
       const lines = [`MCP Resources (${resources.length} available):`];
-      
+
       // Group resources by server
       const resourcesByServer = new Map<string, typeof resources>();
-      resources.forEach(resource => {
+      resources.forEach((resource) => {
         if (!resourcesByServer.has(resource.serverId)) {
           resourcesByServer.set(resource.serverId, []);
         }
@@ -200,8 +208,8 @@ export class McpToolAdapter {
         const server = this.mcpManager.getServer(serverId);
         const serverName = server?.name || serverId;
         lines.push(`\n  ${serverName}:`);
-        
-        serverResources.forEach(resource => {
+
+        serverResources.forEach((resource) => {
           lines.push(`    • ${resource.name} (${resource.uri})`);
           if (resource.description) {
             lines.push(`      ${resource.description}`);
@@ -209,7 +217,7 @@ export class McpToolAdapter {
         });
       });
 
-      return lines.join('\n');
+      return lines.join("\n");
     } catch (error) {
       return `Error getting MCP resources: ${(error as Error).message}`;
     }
@@ -220,19 +228,19 @@ export class McpToolAdapter {
    */
   public async testConnections(): Promise<string> {
     const servers = this.mcpManager.getServers();
-    
+
     if (servers.length === 0) {
-      return 'No MCP servers configured to test';
+      return "No MCP servers configured to test";
     }
 
     const results = [];
-    
+
     for (const server of servers) {
       try {
         if (!server.client.isConnected()) {
           await this.mcpManager.connectServer(server.id);
         }
-        
+
         // Try to list tools as a connection test
         await server.client.listTools();
         results.push(`✅ ${server.name}: Connected successfully`);
@@ -241,6 +249,6 @@ export class McpToolAdapter {
       }
     }
 
-    return results.join('\n');
+    return results.join("\n");
   }
 }

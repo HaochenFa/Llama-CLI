@@ -4,27 +4,27 @@
 /**
  * MCP Protocol version
  */
-export const MCP_VERSION = '2024-11-05';
+export const MCP_VERSION = "2024-11-05";
 
 /**
  * JSON-RPC 2.0 message types
  */
 export interface JsonRpcRequest {
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   id: string | number;
   method: string;
   params?: any;
 }
 
 export interface JsonRpcResponse {
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   id: string | number;
   result?: any;
   error?: JsonRpcError;
 }
 
 export interface JsonRpcNotification {
-  jsonrpc: '2.0';
+  jsonrpc: "2.0";
   method: string;
   params?: any;
 }
@@ -68,7 +68,7 @@ export interface McpTool {
   name: string;
   description?: string;
   inputSchema: {
-    type: 'object';
+    type: "object";
     properties?: Record<string, any>;
     required?: string[];
   };
@@ -87,7 +87,7 @@ export interface CallToolRequest {
  */
 export interface CallToolResult {
   content: Array<{
-    type: 'text' | 'image' | 'resource';
+    type: "text" | "image" | "resource";
     text?: string;
     data?: string;
     mimeType?: string;
@@ -131,7 +131,7 @@ export interface McpServerConfig {
 /**
  * MCP Connection status
  */
-export type McpConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type McpConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
 
 /**
  * MCP Server info
@@ -173,7 +173,7 @@ export enum McpErrorCode {
   MethodNotFound = -32601,
   InvalidParams = -32602,
   InternalError = -32603,
-  
+
   // MCP-specific error codes
   InvalidTool = -32000,
   ToolExecutionError = -32001,
@@ -185,11 +185,11 @@ export enum McpErrorCode {
  * MCP Event types
  */
 export interface McpEvents {
-  'connection-status': McpConnectionStatus;
-  'tools-changed': McpTool[];
-  'resources-changed': McpResource[];
-  'prompts-changed': McpPrompt[];
-  'error': Error;
+  "connection-status": McpConnectionStatus;
+  "tools-changed": McpTool[];
+  "resources-changed": McpResource[];
+  "prompts-changed": McpPrompt[];
+  error: Error;
 }
 
 /**
@@ -200,19 +200,19 @@ export interface IMcpClient {
   disconnect(): Promise<void>;
   isConnected(): boolean;
   getStatus(): McpConnectionStatus;
-  
+
   // Tool operations
   listTools(): Promise<McpTool[]>;
   callTool(request: CallToolRequest): Promise<CallToolResult>;
-  
+
   // Resource operations
   listResources(): Promise<McpResource[]>;
   readResource(uri: string): Promise<any>;
-  
+
   // Prompt operations
   listPrompts(): Promise<McpPrompt[]>;
   getPrompt(name: string, args?: Record<string, any>): Promise<any>;
-  
+
   // Event handling
   on<K extends keyof McpEvents>(event: K, listener: (data: McpEvents[K]) => void): void;
   off<K extends keyof McpEvents>(event: K, listener: (data: McpEvents[K]) => void): void;
