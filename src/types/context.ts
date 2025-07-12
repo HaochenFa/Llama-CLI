@@ -5,7 +5,7 @@
  * 参考 dev.md 中关于 ToolDefinition 的描述。
  */
 export interface ToolDefinition {
-  type: 'native' | 'openapi' | 'mcp';
+  type: "native" | "openapi" | "mcp";
   name: string;
   description: string;
   schema?: any; // 工具参数的 JSON Schema，例如 OpenAPI Schema
@@ -28,7 +28,7 @@ export interface FileContext {
  */
 export interface ToolCall {
   id?: string; // The ID of the tool call (optional, as not all backends provide it).
-  type: 'function';
+  type: "function";
   function: {
     name: string;
     arguments: any; // The arguments to pass to the function, already parsed as an object.
@@ -39,7 +39,7 @@ export interface ToolCall {
  * 定义从 LLM 返回的工具调用负载。
  */
 export interface ToolCallPayload {
-  type: 'tool_calls';
+  type: "tool_calls";
   tool_calls: ToolCall[];
 }
 
@@ -48,7 +48,7 @@ export interface ToolCallPayload {
  * 用于构建和管理与 LLM 的对话历史。
  */
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
+  role: "system" | "user" | "assistant" | "tool";
   content: string | null;
   tool_call_id?: string; // 用于关联工具调用的结果
   tool_calls?: ToolCall[]; // Assistant message can have tool calls
