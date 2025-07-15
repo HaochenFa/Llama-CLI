@@ -192,36 +192,35 @@ describe("FileContextManager", () => {
   });
 
   describe("getFileCompletions", () => {
-    it("should return matching files and directories", () => {
-      const partial = "src/";
+    it("should return files and directories in current directory", () => {
+      const partial = "";
 
-      // For 'src/', basePath will be testWorkingDir and fileName will be 'src'
-      // So we need to mock testWorkingDir to contain a 'src' directory
-      mockFs.existsSync.mockImplementation((dirPath: any) => {
-        return dirPath === testWorkingDir;
-      });
-
-      mockFs.readdirSync.mockImplementation((dirPath: any) => {
-        if (dirPath === testWorkingDir) {
-          return [
-            { name: "src", isDirectory: () => true },
-            { name: "package.json", isDirectory: () => false },
-            { name: "README.md", isDirectory: () => false },
-          ] as any;
-        }
-        return [];
-      });
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
+      mockFs.readdirSync.mockReturnValue([
+        { name: "src", isDirectory: () => true },
+        { name: "package.json", isDirectory: () => false },
+        { name: "README.md", isDirectory: () => false },
+      ] as any);
 
       const completions = fileManager.getFileCompletions(partial);
 
       expect(completions).toContain("src/");
+      expect(completions).toContain("package.json");
+      expect(completions).toContain("README.md");
     });
 
     it("should filter by partial filename", () => {
-      const partial = "src/ma";
-      const basePath = path.resolve(testWorkingDir, "src");
+      const partial = "ma";
 
-      mockFs.existsSync.mockReturnValue(true);
+      // Mock existsSync to return false for "ma" (it's not a directory)
+      // but true for the working directory
+      mockFs.existsSync.mockImplementation((dirPath: any) => {
+        const resolvedPath = path.resolve(testWorkingDir, "ma");
+        return dirPath === testWorkingDir && dirPath !== resolvedPath;
+      });
+
+      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
       mockFs.readdirSync.mockReturnValue([
         { name: "main.ts", isDirectory: () => false },
         { name: "utils.ts", isDirectory: () => false },
@@ -230,32 +229,27 @@ describe("FileContextManager", () => {
 
       const completions = fileManager.getFileCompletions(partial);
 
-      expect(completions).toContain("src/main.ts");
-      expect(completions).toContain("src/manager.js");
-      expect(completions).not.toContain("src/utils.ts");
+      expect(completions).toContain("main.ts");
+      expect(completions).toContain("manager.js");
+      expect(completions).not.toContain("utils.ts");
     });
 
     it("should skip hidden files", () => {
-      const partial = "src/";
+      const partial = "";
 
-      mockFs.existsSync.mockImplementation((dirPath: any) => {
-        return dirPath === testWorkingDir;
-      });
-
-      mockFs.readdirSync.mockImplementation((dirPath: any) => {
-        if (dirPath === testWorkingDir) {
-          return [
-            { name: "src", isDirectory: () => true },
-            { name: ".hidden", isDirectory: () => false },
-            { name: ".git", isDirectory: () => true },
-          ] as any;
-        }
-        return [];
-      });
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
+      mockFs.readdirSync.mockReturnValue([
+        { name: "src", isDirectory: () => true },
+        { name: ".hidden", isDirectory: () => false },
+        { name: ".git", isDirectory: () => true },
+        { name: "visible.txt", isDirectory: () => false },
+      ] as any);
 
       const completions = fileManager.getFileCompletions(partial);
 
       expect(completions).toContain("src/");
+      expect(completions).toContain("visible.txt");
       expect(completions).not.toContain(".hidden");
       expect(completions).not.toContain(".git/");
     });

@@ -150,17 +150,351 @@ export class InteractiveChatSession {
     return prompt + " ";
   }
 
-  private getUserInput(prompt: string): Promise<string> {
+  private async getUserInput(prompt: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.rl.question(prompt, (answer) => {
-        resolve(answer);
-      });
+      let currentInput = "";
+      let cursorPosition = 0;
+      let isInSelector = false;
 
-      // Handle Ctrl+C
-      this.rl.on("SIGINT", () => {
-        reject(new Error("SIGINT"));
+      // Set up raw mode for character-by-character input
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdout.write(prompt);
+
+      const redrawLine = () => {
+        // Clear line and redraw
+        process.stdout.write("\r\x1b[K");
+        process.stdout.write(prompt + currentInput);
+        // Move cursor to correct position
+        const moveBack = currentInput.length - cursorPosition;
+        if (moveBack > 0) {
+          process.stdout.write(`\x1b[${moveBack}D`);
+        }
+      };
+
+      const handleKeypress = async (key: Buffer) => {
+        if (isInSelector) return; // Ignore input while selector is active
+
+        const char = key.toString();
+
+        // Handle special keys
+        if (key[0] === 3) {
+          // Ctrl+C
+          process.stdin.setRawMode(false);
+          reject(new Error("SIGINT"));
+          return;
+        }
+
+        if (key[0] === 13) {
+          // Enter
+          process.stdin.setRawMode(false);
+          process.stdin.removeListener("data", handleKeypress);
+          process.stdout.write("\n");
+          resolve(currentInput);
+          return;
+        }
+
+        if (key[0] === 127) {
+          // Backspace
+          if (cursorPosition > 0) {
+            currentInput =
+              currentInput.slice(0, cursorPosition - 1) + currentInput.slice(cursorPosition);
+            cursorPosition--;
+            redrawLine();
+          }
+          return;
+        }
+
+        // Handle arrow keys
+        if (key[0] === 27 && key[1] === 91) {
+          if (key[2] === 67) {
+            // Right arrow
+            if (cursorPosition < currentInput.length) {
+              cursorPosition++;
+              process.stdout.write("\x1b[C");
+            }
+          } else if (key[2] === 68) {
+            // Left arrow
+            if (cursorPosition > 0) {
+              cursorPosition--;
+              process.stdout.write("\x1b[D");
+            }
+          }
+          return;
+        }
+
+        // Handle printable characters
+        if (key[0] >= 32 && key[0] <= 126) {
+          // Insert character at cursor position
+          currentInput =
+            currentInput.slice(0, cursorPosition) + char + currentInput.slice(cursorPosition);
+          cursorPosition++;
+
+          // Check for triggers
+          if (char === "@") {
+            isInSelector = true;
+            try {
+              const fileChoice = await this.showSmartFileSelector("");
+              if (fileChoice) {
+                // Replace @ with selected file
+                currentInput =
+                  currentInput.slice(0, cursorPosition - 1) +
+                  fileChoice +
+                  currentInput.slice(cursorPosition);
+                cursorPosition = cursorPosition - 1 + fileChoice.length;
+              }
+            } catch (error) {
+              // User cancelled
+            }
+            isInSelector = false;
+            redrawLine();
+          } else if (char === "/" && cursorPosition === 1) {
+            // Only trigger command selector if / is at the beginning
+            isInSelector = true;
+            try {
+              const commandChoice = await this.showSmartCommandSelector("");
+              if (commandChoice) {
+                // Replace entire line with selected command
+                currentInput = commandChoice;
+                cursorPosition = commandChoice.length;
+              }
+            } catch (error) {
+              // User cancelled
+            }
+            isInSelector = false;
+            redrawLine();
+          } else {
+            redrawLine();
+          }
+        }
+      };
+
+      process.stdin.on("data", handleKeypress);
+    });
+  }
+
+  /**
+   * Show smart file selector with directory navigation
+   */
+  private async showSmartFileSelector(prefix: string): Promise<string | null> {
+    let currentPath = "";
+
+    while (true) {
+      const files = this.getFileChoices(currentPath);
+
+      if (files.length === 0) {
+        console.log(chalk.yellow("📁 No files found"));
+        return null;
+      }
+
+      // Temporarily restore normal mode for inquirer
+      process.stdin.setRawMode(false);
+
+      const { selectedFile } = await inquirer.prompt([
+        {
+          type: "list",
+          name: "selectedFile",
+          message: currentPath ? `📁 ${currentPath}:` : "📁 Select a file:",
+          choices: files,
+          pageSize: 15,
+          loop: false, // Prevent infinite scrolling
+        },
+      ]);
+
+      if (selectedFile === null) {
+        return null; // User cancelled
+      }
+
+      if (selectedFile === "..") {
+        // Go up one directory
+        currentPath = currentPath.split("/").slice(0, -1).join("/");
+        continue;
+      }
+
+      if (selectedFile.endsWith("/")) {
+        // Enter directory
+        currentPath = currentPath
+          ? `${currentPath}/${selectedFile.slice(0, -1)}`
+          : selectedFile.slice(0, -1);
+        continue;
+      }
+
+      // File selected
+      const fullPath = currentPath ? `${currentPath}/${selectedFile}` : selectedFile;
+      return fullPath;
+    }
+  }
+
+  private getFileChoices(currentPath: string): any[] {
+    const files = this.fileContextManager.getFileCompletions(currentPath);
+    const choices: any[] = [];
+
+    // Add parent directory option if not at root
+    if (currentPath) {
+      choices.push({
+        name: "📁 .. (parent directory)",
+        value: "..",
+      });
+    }
+
+    // Separate directories and files
+    const directories: string[] = [];
+    const regularFiles: string[] = [];
+
+    files.forEach((file) => {
+      if (file.endsWith("/")) {
+        directories.push(file);
+      } else {
+        regularFiles.push(file);
+      }
+    });
+
+    // Add directories first
+    directories.forEach((dir) => {
+      choices.push({
+        name: `📁 ${dir}`,
+        value: dir,
       });
     });
+
+    // Add files
+    regularFiles.forEach((file) => {
+      choices.push({
+        name: `📄 ${file}`,
+        value: file,
+      });
+    });
+
+    if (choices.length > 0) {
+      choices.push(new inquirer.Separator());
+    }
+
+    choices.push({
+      name: "❌ Cancel",
+      value: null,
+    });
+
+    return choices;
+  }
+
+  /**
+   * Show smart command selector with filtering
+   */
+  private async showSmartCommandSelector(prefix: string): Promise<string | null> {
+    const allCommands = [
+      { name: "📚 /help - Show help message", value: "/help", keywords: ["help", "h"] },
+      {
+        name: "📋 /context view - View current context",
+        value: "/context view",
+        keywords: ["context", "ctx", "view"],
+      },
+      {
+        name: "🗑️  /context clear - Clear context",
+        value: "/context clear",
+        keywords: ["context", "ctx", "clear"],
+      },
+      {
+        name: "📄 /files list - List loaded files",
+        value: "/files list",
+        keywords: ["files", "file", "list"],
+      },
+      {
+        name: "🗑️  /files clear - Clear loaded files",
+        value: "/files clear",
+        keywords: ["files", "file", "clear"],
+      },
+      {
+        name: "🤖 /mode agent - Switch to agent mode",
+        value: "/mode agent",
+        keywords: ["mode", "agent"],
+      },
+      {
+        name: "💬 /mode pure - Switch to pure chat mode",
+        value: "/mode pure",
+        keywords: ["mode", "pure", "chat"],
+      },
+      {
+        name: "🧠 /memory add - Add memory",
+        value: "/memory add",
+        keywords: ["memory", "mem", "add"],
+      },
+      {
+        name: "📝 /memory list - List memories",
+        value: "/memory list",
+        keywords: ["memory", "mem", "list"],
+      },
+      {
+        name: "🗑️  /memory clear - Clear memories",
+        value: "/memory clear",
+        keywords: ["memory", "mem", "clear"],
+      },
+      {
+        name: "🗜️  /compress - Compress chat history",
+        value: "/compress",
+        keywords: ["compress", "comp"],
+      },
+      {
+        name: "💭 /think list - List thinking records",
+        value: "/think list",
+        keywords: ["think", "thinking", "list"],
+      },
+      {
+        name: "✅ /think on - Enable thinking display",
+        value: "/think on",
+        keywords: ["think", "thinking", "on", "enable"],
+      },
+      {
+        name: "❌ /think off - Disable thinking display",
+        value: "/think off",
+        keywords: ["think", "thinking", "off", "disable"],
+      },
+      {
+        name: "🗑️  /think clear - Clear thinking records",
+        value: "/think clear",
+        keywords: ["think", "thinking", "clear"],
+      },
+      { name: "🚪 /exit - Exit chat session", value: "/exit", keywords: ["exit", "quit", "bye"] },
+      { name: "🚪 /quit - Exit chat session", value: "/quit", keywords: ["quit", "exit", "bye"] },
+    ];
+
+    // Filter commands based on prefix if provided
+    let filteredCommands = allCommands;
+    if (prefix.trim()) {
+      const searchTerm = prefix.toLowerCase().trim();
+      filteredCommands = allCommands.filter(
+        (cmd) =>
+          cmd.value.toLowerCase().includes(searchTerm) ||
+          cmd.keywords.some((keyword) => keyword.includes(searchTerm))
+      );
+    }
+
+    if (filteredCommands.length === 0) {
+      console.log(chalk.yellow("⚡ No matching commands found"));
+      return null;
+    }
+
+    // Temporarily restore normal mode for inquirer
+    process.stdin.setRawMode(false);
+
+    const { selectedCommand } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "selectedCommand",
+        message: prefix.trim() ? `⚡ Commands matching "${prefix}":` : "⚡ Select a command:",
+        choices: [
+          ...filteredCommands,
+          new inquirer.Separator(),
+          {
+            name: "❌ Cancel",
+            value: null,
+          },
+        ],
+        pageSize: 15,
+        loop: false, // Prevent infinite scrolling
+      },
+    ]);
+
+    return selectedCommand;
   }
 
   private async handleSlashCommand(command: string): Promise<void> {

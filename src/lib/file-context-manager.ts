@@ -103,38 +103,60 @@ export class FileContextManager {
    */
   public getFileCompletions(partial: string): string[] {
     try {
-      // 处理相对路径
-      const basePath = path.isAbsolute(partial)
-        ? path.dirname(partial)
-        : path.resolve(this.workingDirectory, path.dirname(partial));
+      // 确定要扫描的目录
+      let targetDir: string;
+      let searchPattern = "";
 
-      const fileName = path.basename(partial);
+      if (partial === "" || partial === ".") {
+        // 扫描当前工作目录
+        targetDir = this.workingDirectory;
+      } else if (
+        partial.endsWith("/") ||
+        fs.existsSync(path.resolve(this.workingDirectory, partial))
+      ) {
+        // 如果是目录路径，扫描该目录
+        targetDir = path.resolve(this.workingDirectory, partial);
+      } else {
+        // 如果是部分路径，扫描父目录并过滤
+        targetDir = path.resolve(this.workingDirectory, path.dirname(partial));
+        searchPattern = path.basename(partial).toLowerCase();
+      }
 
       // 检查目录是否存在
-      if (!fs.existsSync(basePath)) {
+      if (!fs.existsSync(targetDir) || !fs.statSync(targetDir).isDirectory()) {
         return [];
       }
 
       // 读取目录内容
-      const entries = fs.readdirSync(basePath, { withFileTypes: true });
+      const entries = fs.readdirSync(targetDir, { withFileTypes: true });
 
-      // 过滤匹配的文件和目录
+      // 过滤和排序
       const matches = entries
         .filter((entry) => {
-          // 跳过隐藏文件（以 . 开头）
-          if (entry.name.startsWith(".")) return false;
+          // 跳过隐藏文件（以 . 开头），除非用户明确搜索
+          if (entry.name.startsWith(".") && !searchPattern.startsWith(".")) {
+            return false;
+          }
 
-          // 检查是否匹配部分文件名
-          return entry.name.toLowerCase().startsWith(fileName.toLowerCase());
+          // 如果有搜索模式，检查匹配
+          if (searchPattern) {
+            return entry.name.toLowerCase().startsWith(searchPattern);
+          }
+
+          return true;
+        })
+        .sort((a, b) => {
+          // 目录排在前面
+          if (a.isDirectory() && !b.isDirectory()) return -1;
+          if (!a.isDirectory() && b.isDirectory()) return 1;
+          // 同类型按字母顺序
+          return a.name.localeCompare(b.name);
         })
         .map((entry) => {
-          const fullPath = path.join(basePath, entry.name);
-          const relativePath = path.relative(this.workingDirectory, fullPath);
-
           // 如果是目录，添加 / 后缀
-          return entry.isDirectory() ? relativePath + "/" : relativePath;
+          return entry.isDirectory() ? entry.name + "/" : entry.name;
         })
-        .slice(0, 10); // 限制最多 10 个建议
+        .slice(0, 20); // 增加到20个建议
 
       return matches;
     } catch (error) {
