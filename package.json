@@ -32,6 +32,7 @@
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "inquirer": "^9.2.23",
+    "inquirer-autocomplete-standalone": "^0.8.1",
     "marked": "^11.2.0",
     "marked-terminal": "^6.2.0",
     "ora": "^8.0.1"

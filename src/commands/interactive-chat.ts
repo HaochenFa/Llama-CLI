@@ -5,6 +5,7 @@ import { ToolDispatcher } from "../lib/tool-dispatcher.js";
 import { FileContextManager } from "../lib/file-context-manager.js";
 import { ThinkingRenderer } from "../lib/thinking-renderer.js";
 import { StreamProcessor } from "../lib/stream-processor.js";
+import { EnhancedInputHandler } from "../lib/enhanced-input-handler.js";
 import {
   InternalContext,
   ChatMessage,
@@ -172,329 +173,39 @@ export class InteractiveChatSession {
   }
 
   private async getUserInput(prompt: string): Promise<string> {
-    while (true) {
-      // Use inquirer for reliable input handling
-      const { userInput } = await inquirer.prompt([
-        {
-          type: "input",
-          name: "userInput",
-          message: prompt.trim(),
-          prefix: "",
-        },
-      ]);
-
-      // Check for special characters that trigger selectors
-      if (userInput === "/") {
-        // Trigger command selector
-        const selectedCommand = await this.showSmartCommandSelector("");
-        if (selectedCommand) {
-          // Execute command directly instead of returning it
-          try {
-            await this.handleSlashCommand(selectedCommand);
-          } catch (error) {
-            console.error(chalk.red(`❌ Command error: ${(error as Error).message}`));
-          }
-        }
-        // Continue the loop to get input again after command execution
-        continue;
-      }
-
-      // Check for @ at the beginning or after space
-      if (userInput === "@" || userInput.endsWith(" @")) {
-        // Trigger file selector
-        const selectedFile = await this.showSmartFileSelector("");
-        if (selectedFile) {
-          const fileRef = "@" + selectedFile;
-          if (userInput === "@") {
-            return fileRef;
-          } else {
-            return userInput.slice(0, -1) + fileRef;
-          }
-        }
-        // If cancelled, continue the loop to get input again
-        continue;
-      }
-
-      // Check for @ anywhere in the input
-      const atIndex = userInput.lastIndexOf("@");
-      if (atIndex !== -1 && (atIndex === 0 || userInput[atIndex - 1] === " ")) {
-        // Extract the part after @
-        const afterAt = userInput.slice(atIndex + 1);
-
-        // If there's nothing after @ or just whitespace, trigger selector
-        if (!afterAt.trim()) {
-          const selectedFile = await this.showSmartFileSelector("");
-          if (selectedFile) {
-            const beforeAt = userInput.slice(0, atIndex);
-            return beforeAt + "@" + selectedFile;
-          }
-          // If cancelled, continue the loop to get input again
-          continue;
-        }
-      }
-
-      // Return the input as-is if no special handling needed
-      return userInput;
-    }
-  }
-
-  /**
-   * Show smart file selector with directory navigation
-   */
-  private async showSmartFileSelector(_prefix: string): Promise<string | null> {
-    let currentPath = "";
-
-    while (true) {
-      const files = this.getFileChoices(currentPath);
-
-      if (files.length === 0) {
-        console.log(chalk.yellow("📁 No files found"));
-        return null;
-      }
-
-      // Temporarily restore normal mode for inquirer
-      process.stdin.setRawMode(false);
-
-      const { selectedFile } = await inquirer.prompt([
-        {
-          type: "list",
-          name: "selectedFile",
-          message: currentPath ? `📁 ${currentPath}:` : "📁 Select a file:",
-          choices: files,
-          pageSize: 15,
-          loop: true, // Enable circular navigation
-          prefix: "🔍",
-          suffix: "Press Enter to select",
-        },
-      ]);
-
-      if (selectedFile === null) {
-        return null; // User cancelled
-      }
-
-      if (selectedFile === "..") {
-        // Go up one directory
-        currentPath = currentPath.split("/").slice(0, -1).join("/");
-        continue;
-      }
-
-      if (selectedFile.endsWith("/")) {
-        // Enter directory
-        currentPath = currentPath
-          ? `${currentPath}/${selectedFile.slice(0, -1)}`
-          : selectedFile.slice(0, -1);
-        continue;
-      }
-
-      // File selected
-      const fullPath = currentPath ? `${currentPath}/${selectedFile}` : selectedFile;
-      return fullPath;
-    }
-  }
-
-  private getFileChoices(currentPath: string): any[] {
-    const files = this.fileContextManager.getFileCompletions(currentPath);
-    const choices: any[] = [];
-
-    // Add parent directory option if not at root
-    if (currentPath) {
-      choices.push({
-        name: "📁 .. (parent directory)",
-        value: "..",
-      });
-    }
-
-    // Separate directories and files
-    const directories: string[] = [];
-    const regularFiles: string[] = [];
-
-    files.forEach((file) => {
-      if (file.endsWith("/")) {
-        directories.push(file);
-      } else {
-        regularFiles.push(file);
-      }
+    const inputHandler = new EnhancedInputHandler({
+      message: prompt.trim(),
+      onCommandExecute: async (command: string) => {
+        await this.handleSlashCommand(command);
+      },
     });
 
-    // Add directories first with better styling
-    if (directories.length > 0) {
-      if (choices.length > 0) {
-        choices.push(new inquirer.Separator("── Directories ──"));
+    try {
+      const result = await inputHandler.getInput();
+
+      // 如果有文件引用，加载文件到上下文
+      if (result.fileReferences.length > 0) {
+        for (const filePath of result.fileReferences) {
+          const fileContext = await this.fileContextManager.loadFile(filePath);
+          if (
+            fileContext &&
+            !this.fileContextManager.isFileInContext(filePath, this.internalContext.file_context)
+          ) {
+            this.internalContext.file_context.push(fileContext);
+            console.log(
+              chalk.green(`✅ Loaded file: ${this.fileContextManager.getDisplayName(fileContext)}`)
+            );
+          }
+        }
       }
 
-      directories.forEach((dir) => {
-        choices.push({
-          name: `📁 ${dir}`,
-          value: dir,
-        });
-      });
+      return result.text;
+    } catch (error) {
+      if ((error as Error).message === "用户取消输入") {
+        throw new Error("SIGINT");
+      }
+      throw error;
     }
-
-    // Add files with better styling
-    if (regularFiles.length > 0) {
-      choices.push(new inquirer.Separator("── Files ──"));
-
-      regularFiles.forEach((file) => {
-        // Add file icon based on extension
-        let icon = "📄";
-        if (file.endsWith(".js") || file.endsWith(".ts")) {
-          icon = "🟨";
-        } else if (file.endsWith(".json")) {
-          icon = "📊";
-        } else if (file.endsWith(".md")) {
-          icon = "📝";
-        } else if (file.endsWith(".html")) {
-          icon = "🌐";
-        } else if (file.endsWith(".css")) {
-          icon = "🎨";
-        } else if (
-          file.endsWith(".png") ||
-          file.endsWith(".jpg") ||
-          file.endsWith(".jpeg") ||
-          file.endsWith(".gif")
-        ) {
-          icon = "🖼️";
-        }
-
-        choices.push({
-          name: `${icon} ${file}`,
-          value: file,
-        });
-      });
-    }
-
-    if (choices.length > 0) {
-      choices.push(new inquirer.Separator("─────────────────────────────────"));
-    }
-
-    choices.push({
-      name: "❌ Cancel",
-      value: null,
-    });
-
-    return choices;
-  }
-
-  /**
-   * Show smart command selector with filtering
-   */
-  private async showSmartCommandSelector(prefix: string): Promise<string | null> {
-    const allCommands = [
-      { name: "📚 /help - Show help message", value: "/help", keywords: ["help", "h"] },
-      {
-        name: "📋 /context view - View current context",
-        value: "/context view",
-        keywords: ["context", "ctx", "view"],
-      },
-      {
-        name: "🗑️  /context clear - Clear context",
-        value: "/context clear",
-        keywords: ["context", "ctx", "clear"],
-      },
-      {
-        name: "📄 /files list - List loaded files",
-        value: "/files list",
-        keywords: ["files", "file", "list"],
-      },
-      {
-        name: "🗑️  /files clear - Clear loaded files",
-        value: "/files clear",
-        keywords: ["files", "file", "clear"],
-      },
-      {
-        name: "🤖 /mode agent - Switch to agent mode",
-        value: "/mode agent",
-        keywords: ["mode", "agent"],
-      },
-      {
-        name: "💬 /mode pure - Switch to pure chat mode",
-        value: "/mode pure",
-        keywords: ["mode", "pure", "chat"],
-      },
-      {
-        name: "🧠 /memory add - Add memory",
-        value: "/memory add",
-        keywords: ["memory", "mem", "add"],
-      },
-      {
-        name: "📝 /memory list - List memories",
-        value: "/memory list",
-        keywords: ["memory", "mem", "list"],
-      },
-      {
-        name: "🗑️  /memory clear - Clear memories",
-        value: "/memory clear",
-        keywords: ["memory", "mem", "clear"],
-      },
-      {
-        name: "🗜️  /compress - Compress chat history",
-        value: "/compress",
-        keywords: ["compress", "comp"],
-      },
-      {
-        name: "💭 /think list - List thinking records",
-        value: "/think list",
-        keywords: ["think", "thinking", "list"],
-      },
-      {
-        name: "✅ /think on - Enable thinking display",
-        value: "/think on",
-        keywords: ["think", "thinking", "on", "enable"],
-      },
-      {
-        name: "❌ /think off - Disable thinking display",
-        value: "/think off",
-        keywords: ["think", "thinking", "off", "disable"],
-      },
-      {
-        name: "🗑️  /think clear - Clear thinking records",
-        value: "/think clear",
-        keywords: ["think", "thinking", "clear"],
-      },
-      { name: "🚪 /exit - Exit chat session", value: "/exit", keywords: ["exit", "quit", "bye"] },
-      { name: "🚪 /quit - Exit chat session", value: "/quit", keywords: ["quit", "exit", "bye"] },
-    ];
-
-    // Filter commands based on prefix if provided
-    let filteredCommands = allCommands;
-    if (prefix.trim()) {
-      const searchTerm = prefix.toLowerCase().trim();
-      filteredCommands = allCommands.filter(
-        (cmd) =>
-          cmd.value.toLowerCase().includes(searchTerm) ||
-          cmd.keywords.some((keyword) => keyword.includes(searchTerm))
-      );
-    }
-
-    if (filteredCommands.length === 0) {
-      console.log(chalk.yellow("⚡ No matching commands found"));
-      return null;
-    }
-
-    // Temporarily restore normal mode for inquirer
-    process.stdin.setRawMode(false);
-
-    const { selectedCommand } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "selectedCommand",
-        message: prefix.trim() ? `⚡ Commands matching "${prefix}":` : "⚡ Select a command:",
-        choices: [
-          ...filteredCommands,
-          new inquirer.Separator("─────────────────────────────────"),
-          {
-            name: "❌ Cancel",
-            value: null,
-          },
-        ],
-        pageSize: 15,
-        loop: true, // Enable circular navigation
-        prefix: "⚙️",
-        suffix: "Press Enter to select",
-      },
-    ]);
-
-    return selectedCommand;
   }
 
   private async handleSlashCommand(command: string): Promise<void> {

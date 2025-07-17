@@ -25,9 +25,11 @@ export default {
     "^chalk$": "<rootDir>/tests/__mocks__/chalk.js",
     "^inquirer$": "<rootDir>/tests/__mocks__/inquirer.js",
     "^ora$": "<rootDir>/tests/__mocks__/ora.js",
+    "^inquirer-autocomplete-standalone$":
+      "<rootDir>/tests/__mocks__/inquirer-autocomplete-standalone.js",
   },
   transformIgnorePatterns: [
-    "node_modules/(?!(chalk|inquirer|ora|marked-terminal|ansi-escapes|cli-spinners|log-symbols|strip-ansi|string-width|emoji-regex|is-unicode-supported|@inquirer|rxjs|mute-stream|run-async|figures|yoctocolors-cjs)/)",
+    "node_modules/(?!(chalk|inquirer|ora|marked-terminal|ansi-escapes|cli-spinners|log-symbols|strip-ansi|string-width|emoji-regex|is-unicode-supported|@inquirer|rxjs|mute-stream|run-async|figures|yoctocolors-cjs|inquirer-autocomplete-standalone)/)",
   ],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts", "!src/index.ts"],
