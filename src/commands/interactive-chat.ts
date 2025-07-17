@@ -172,119 +172,70 @@ export class InteractiveChatSession {
   }
 
   private async getUserInput(prompt: string): Promise<string> {
-    return new Promise((resolve) => {
-      let currentInput = "";
+    while (true) {
+      // Use inquirer for reliable input handling
+      const { userInput } = await inquirer.prompt([
+        {
+          type: "input",
+          name: "userInput",
+          message: prompt.trim(),
+          prefix: "",
+        },
+      ]);
 
-      // Display prompt manually
-      process.stdout.write(prompt);
-
-      // Set raw mode for immediate key detection
-      if (process.stdin.isTTY) {
-        process.stdin.setRawMode(true);
-      }
-
-      const cleanup = () => {
-        if (process.stdin.isTTY) {
-          process.stdin.setRawMode(false);
-        }
-      };
-
-      const handleKeyPress = async (key: Buffer) => {
-        const char = key.toString();
-
-        // Handle special keys
-        if (key[0] === 3) {
-          // Ctrl+C
-          cleanup();
-          process.exit(0);
-        }
-
-        if (key[0] === 13) {
-          // Enter
-          cleanup();
-          console.log(); // New line
-          resolve(currentInput);
-          return;
-        }
-
-        if (key[0] === 127) {
-          // Backspace
-          if (currentInput.length > 0) {
-            currentInput = currentInput.slice(0, -1);
-            process.stdout.write("\b \b");
-          }
-          return;
-        }
-
-        // Handle special trigger characters
-        if (char === "/" && currentInput === "") {
-          cleanup();
-          console.log(); // New line
-
+      // Check for special characters that trigger selectors
+      if (userInput === "/") {
+        // Trigger command selector
+        const selectedCommand = await this.showSmartCommandSelector("");
+        if (selectedCommand) {
+          // Execute command directly instead of returning it
           try {
-            const selectedCommand = await this.showSmartCommandSelector("");
-            if (selectedCommand) {
-              // Execute command directly instead of returning it
-              await this.handleSlashCommand(selectedCommand);
-            }
+            await this.handleSlashCommand(selectedCommand);
           } catch (error) {
             console.error(chalk.red(`❌ Command error: ${(error as Error).message}`));
           }
-
-          // Restart input after command execution
-          const newInput = await this.getUserInput(prompt);
-          resolve(newInput);
-          return;
         }
+        // Continue the loop to get input again after command execution
+        continue;
+      }
 
-        if (char === "@" && (currentInput === "" || currentInput.endsWith(" "))) {
-          cleanup();
-          console.log(); // New line
-
-          try {
-            const selectedFile = await this.showSmartFileSelector("");
-            if (selectedFile) {
-              const fileRef = "@" + selectedFile;
-              const newCurrentInput = currentInput === "" ? fileRef : currentInput + fileRef;
-
-              // Continue input with the file reference added
-              const restOfInput = await this.getUserInput(prompt + newCurrentInput);
-              if (restOfInput.trim()) {
-                resolve(newCurrentInput + restOfInput);
-              } else {
-                resolve(newCurrentInput);
-              }
-              return;
-            }
-          } catch (error) {
-            console.error(chalk.red(`❌ File selector error: ${(error as Error).message}`));
+      // Check for @ at the beginning or after space
+      if (userInput === "@" || userInput.endsWith(" @")) {
+        // Trigger file selector
+        const selectedFile = await this.showSmartFileSelector("");
+        if (selectedFile) {
+          const fileRef = "@" + selectedFile;
+          if (userInput === "@") {
+            return fileRef;
+          } else {
+            return userInput.slice(0, -1) + fileRef;
           }
-
-          // Restart input if file selection was cancelled
-          const newInput = await this.getUserInput(prompt);
-          resolve(newInput);
-          return;
         }
+        // If cancelled, continue the loop to get input again
+        continue;
+      }
 
-        // Handle regular character input
-        if (char >= " " && char <= "~") {
-          currentInput += char;
-          process.stdout.write(char);
+      // Check for @ anywhere in the input
+      const atIndex = userInput.lastIndexOf("@");
+      if (atIndex !== -1 && (atIndex === 0 || userInput[atIndex - 1] === " ")) {
+        // Extract the part after @
+        const afterAt = userInput.slice(atIndex + 1);
+
+        // If there's nothing after @ or just whitespace, trigger selector
+        if (!afterAt.trim()) {
+          const selectedFile = await this.showSmartFileSelector("");
+          if (selectedFile) {
+            const beforeAt = userInput.slice(0, atIndex);
+            return beforeAt + "@" + selectedFile;
+          }
+          // If cancelled, continue the loop to get input again
+          continue;
         }
-      };
+      }
 
-      process.stdin.on("data", handleKeyPress);
-
-      // Handle process exit to cleanup
-      const exitHandler = () => {
-        cleanup();
-        process.stdin.removeListener("data", handleKeyPress);
-      };
-
-      process.once("exit", exitHandler);
-      process.once("SIGINT", exitHandler);
-      process.once("SIGTERM", exitHandler);
-    });
+      // Return the input as-is if no special handling needed
+      return userInput;
+    }
   }
 
   /**
