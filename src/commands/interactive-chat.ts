@@ -106,22 +106,43 @@ export class InteractiveChatSession {
 
         // Check for slash commands
         if (userInput.startsWith("/")) {
-          await this.handleSlashCommand(userInput);
+          try {
+            await this.handleSlashCommand(userInput);
+          } catch (commandError) {
+            console.error(chalk.red(`❌ Command error: ${(commandError as Error).message}`));
+            console.log(chalk.blue("💡 Tip: Use /help to see available commands"));
+          }
           continue;
         }
 
         // Process regular chat message
-        await this.processUserMessage(userInput);
+        try {
+          await this.processUserMessage(userInput);
+        } catch (messageError) {
+          console.error(
+            chalk.red(`❌ Message processing error: ${(messageError as Error).message}`)
+          );
+          console.log(chalk.blue("💡 Tip: Try rephrasing your message or check your connection"));
+        }
       } catch (error) {
-        if ((error as any).code === "SIGINT") {
+        if ((error as any).code === "SIGINT" || (error as Error).message === "SIGINT") {
           console.log(chalk.blue("\n👋 Goodbye!"));
           break;
         }
-        console.error(chalk.red(`❌ Error: ${(error as Error).message}`));
+        console.error(chalk.red(`❌ Unexpected error: ${(error as Error).message}`));
+        console.log(chalk.blue("💡 Tip: If this persists, try restarting the CLI"));
+
+        // Add a small delay to prevent rapid error loops
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
-    this.rl.close();
+    // Ensure proper cleanup
+    try {
+      this.rl.close();
+    } catch (error) {
+      // Ignore cleanup errors
+    }
   }
 
   private generatePrompt(): string {
@@ -151,126 +172,17 @@ export class InteractiveChatSession {
   }
 
   private async getUserInput(prompt: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      let currentInput = "";
-      let cursorPosition = 0;
-      let isInSelector = false;
+    // Use inquirer for more reliable input handling
+    const { userInput } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "userInput",
+        message: prompt.trim(),
+        prefix: "",
+      },
+    ]);
 
-      // Set up raw mode for character-by-character input
-      process.stdin.setRawMode(true);
-      process.stdin.resume();
-      process.stdout.write(prompt);
-
-      const redrawLine = () => {
-        // Clear line and redraw
-        process.stdout.write("\r\x1b[K");
-        process.stdout.write(prompt + currentInput);
-        // Move cursor to correct position
-        const moveBack = currentInput.length - cursorPosition;
-        if (moveBack > 0) {
-          process.stdout.write(`\x1b[${moveBack}D`);
-        }
-      };
-
-      const handleKeypress = async (key: Buffer) => {
-        if (isInSelector) return; // Ignore input while selector is active
-
-        const char = key.toString();
-
-        // Handle special keys
-        if (key[0] === 3) {
-          // Ctrl+C
-          process.stdin.setRawMode(false);
-          reject(new Error("SIGINT"));
-          return;
-        }
-
-        if (key[0] === 13) {
-          // Enter
-          process.stdin.setRawMode(false);
-          process.stdin.removeListener("data", handleKeypress);
-          process.stdout.write("\n");
-          resolve(currentInput);
-          return;
-        }
-
-        if (key[0] === 127) {
-          // Backspace
-          if (cursorPosition > 0) {
-            currentInput =
-              currentInput.slice(0, cursorPosition - 1) + currentInput.slice(cursorPosition);
-            cursorPosition--;
-            redrawLine();
-          }
-          return;
-        }
-
-        // Handle arrow keys
-        if (key[0] === 27 && key[1] === 91) {
-          if (key[2] === 67) {
-            // Right arrow
-            if (cursorPosition < currentInput.length) {
-              cursorPosition++;
-              process.stdout.write("\x1b[C");
-            }
-          } else if (key[2] === 68) {
-            // Left arrow
-            if (cursorPosition > 0) {
-              cursorPosition--;
-              process.stdout.write("\x1b[D");
-            }
-          }
-          return;
-        }
-
-        // Handle printable characters
-        if (key[0] >= 32 && key[0] <= 126) {
-          // Insert character at cursor position
-          currentInput =
-            currentInput.slice(0, cursorPosition) + char + currentInput.slice(cursorPosition);
-          cursorPosition++;
-
-          // Check for triggers
-          if (char === "@") {
-            isInSelector = true;
-            try {
-              const fileChoice = await this.showSmartFileSelector("");
-              if (fileChoice) {
-                // Replace @ with selected file
-                currentInput =
-                  currentInput.slice(0, cursorPosition - 1) +
-                  fileChoice +
-                  currentInput.slice(cursorPosition);
-                cursorPosition = cursorPosition - 1 + fileChoice.length;
-              }
-            } catch (error) {
-              // User cancelled
-            }
-            isInSelector = false;
-            redrawLine();
-          } else if (char === "/" && cursorPosition === 1) {
-            // Only trigger command selector if / is at the beginning
-            isInSelector = true;
-            try {
-              const commandChoice = await this.showSmartCommandSelector("");
-              if (commandChoice) {
-                // Replace entire line with selected command
-                currentInput = commandChoice;
-                cursorPosition = commandChoice.length;
-              }
-            } catch (error) {
-              // User cancelled
-            }
-            isInSelector = false;
-            redrawLine();
-          } else {
-            redrawLine();
-          }
-        }
-      };
-
-      process.stdin.on("data", handleKeypress);
-    });
+    return userInput;
   }
 
   /**
@@ -297,7 +209,9 @@ export class InteractiveChatSession {
           message: currentPath ? `📁 ${currentPath}:` : "📁 Select a file:",
           choices: files,
           pageSize: 15,
-          loop: false, // Prevent infinite scrolling
+          loop: true, // Enable circular navigation
+          prefix: "🔍",
+          suffix: "Press Enter to select",
         },
       ]);
 
@@ -349,24 +263,55 @@ export class InteractiveChatSession {
       }
     });
 
-    // Add directories first
-    directories.forEach((dir) => {
-      choices.push({
-        name: `📁 ${dir}`,
-        value: dir,
-      });
-    });
+    // Add directories first with better styling
+    if (directories.length > 0) {
+      if (choices.length > 0) {
+        choices.push(new inquirer.Separator("── Directories ──"));
+      }
 
-    // Add files
-    regularFiles.forEach((file) => {
-      choices.push({
-        name: `📄 ${file}`,
-        value: file,
+      directories.forEach((dir) => {
+        choices.push({
+          name: `📁 ${dir}`,
+          value: dir,
+        });
       });
-    });
+    }
+
+    // Add files with better styling
+    if (regularFiles.length > 0) {
+      choices.push(new inquirer.Separator("── Files ──"));
+
+      regularFiles.forEach((file) => {
+        // Add file icon based on extension
+        let icon = "📄";
+        if (file.endsWith(".js") || file.endsWith(".ts")) {
+          icon = "🟨";
+        } else if (file.endsWith(".json")) {
+          icon = "📊";
+        } else if (file.endsWith(".md")) {
+          icon = "📝";
+        } else if (file.endsWith(".html")) {
+          icon = "🌐";
+        } else if (file.endsWith(".css")) {
+          icon = "🎨";
+        } else if (
+          file.endsWith(".png") ||
+          file.endsWith(".jpg") ||
+          file.endsWith(".jpeg") ||
+          file.endsWith(".gif")
+        ) {
+          icon = "🖼️";
+        }
+
+        choices.push({
+          name: `${icon} ${file}`,
+          value: file,
+        });
+      });
+    }
 
     if (choices.length > 0) {
-      choices.push(new inquirer.Separator());
+      choices.push(new inquirer.Separator("─────────────────────────────────"));
     }
 
     choices.push({
@@ -483,14 +428,16 @@ export class InteractiveChatSession {
         message: prefix.trim() ? `⚡ Commands matching "${prefix}":` : "⚡ Select a command:",
         choices: [
           ...filteredCommands,
-          new inquirer.Separator(),
+          new inquirer.Separator("─────────────────────────────────"),
           {
             name: "❌ Cancel",
             value: null,
           },
         ],
         pageSize: 15,
-        loop: false, // Prevent infinite scrolling
+        loop: true, // Enable circular navigation
+        prefix: "⚙️",
+        suffix: "Press Enter to select",
       },
     ]);
 
