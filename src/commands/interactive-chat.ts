@@ -175,25 +175,18 @@ export class InteractiveChatSession {
     return new Promise((resolve) => {
       let currentInput = "";
 
-      // Create readline interface
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        prompt: prompt,
-      });
+      // Display prompt manually
+      process.stdout.write(prompt);
 
       // Set raw mode for immediate key detection
       if (process.stdin.isTTY) {
         process.stdin.setRawMode(true);
       }
 
-      rl.prompt();
-
       const cleanup = () => {
         if (process.stdin.isTTY) {
           process.stdin.setRawMode(false);
         }
-        rl.close();
       };
 
       const handleKeyPress = async (key: Buffer) => {
@@ -282,10 +275,15 @@ export class InteractiveChatSession {
 
       process.stdin.on("data", handleKeyPress);
 
-      // Cleanup on close
-      rl.on("close", () => {
+      // Handle process exit to cleanup
+      const exitHandler = () => {
+        cleanup();
         process.stdin.removeListener("data", handleKeyPress);
-      });
+      };
+
+      process.once("exit", exitHandler);
+      process.once("SIGINT", exitHandler);
+      process.once("SIGTERM", exitHandler);
     });
   }
 
