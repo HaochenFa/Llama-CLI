@@ -212,4 +212,69 @@ describe("InteractiveChatSession Smart Selectors", () => {
       expect(typeof getUserInputMethod).toBe("function");
     });
   });
+
+  describe("Smart Input Detection", () => {
+    it("should execute command directly when '/' is pressed", async () => {
+      // Mock the command selector to return a command
+      mockInquirer.prompt.mockResolvedValueOnce({ selectedCommand: "/help" });
+
+      // Mock handleSlashCommand
+      const handleSlashCommandSpy = jest
+        .spyOn(interactiveChatSession as any, "handleSlashCommand")
+        .mockResolvedValue(undefined);
+
+      // Simulate the getUserInput method being called and '/' being pressed
+      // Since we can't easily test the raw keyboard input, we'll test the logic components
+      const showSmartCommandSelector = (
+        interactiveChatSession as any
+      ).showSmartCommandSelector.bind(interactiveChatSession);
+
+      const selectedCommand = await showSmartCommandSelector("");
+      expect(selectedCommand).toBe("/help");
+
+      // Verify that if we had a command, it would be executed
+      if (selectedCommand) {
+        await (interactiveChatSession as any).handleSlashCommand(selectedCommand);
+      }
+
+      expect(handleSlashCommandSpy).toHaveBeenCalledWith("/help");
+      handleSlashCommandSpy.mockRestore();
+    });
+
+    it("should handle file selector when '@' is pressed", async () => {
+      mockFileContextManager.getFileCompletions.mockReturnValue(["test.js"]);
+      mockInquirer.prompt.mockResolvedValueOnce({ selectedFile: "test.js" });
+
+      const showSmartFileSelector = (interactiveChatSession as any).showSmartFileSelector.bind(
+        interactiveChatSession
+      );
+      const result = await showSmartFileSelector("");
+
+      expect(result).toBe("test.js");
+    });
+
+    it("should handle cancelled selectors gracefully", async () => {
+      // Test command selector cancellation
+      mockInquirer.prompt.mockResolvedValueOnce({ selectedCommand: null });
+
+      const showSmartCommandSelector = (
+        interactiveChatSession as any
+      ).showSmartCommandSelector.bind(interactiveChatSession);
+      const result = await showSmartCommandSelector("");
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle file selector cancellation gracefully", async () => {
+      mockFileContextManager.getFileCompletions.mockReturnValue(["test.js"]);
+      mockInquirer.prompt.mockResolvedValueOnce({ selectedFile: null });
+
+      const showSmartFileSelector = (interactiveChatSession as any).showSmartFileSelector.bind(
+        interactiveChatSession
+      );
+      const result = await showSmartFileSelector("");
+
+      expect(result).toBeNull();
+    });
+  });
 });

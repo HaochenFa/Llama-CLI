@@ -172,23 +172,127 @@ export class InteractiveChatSession {
   }
 
   private async getUserInput(prompt: string): Promise<string> {
-    // Use inquirer for more reliable input handling
-    const { userInput } = await inquirer.prompt([
-      {
-        type: "input",
-        name: "userInput",
-        message: prompt.trim(),
-        prefix: "",
-      },
-    ]);
+    return new Promise((resolve) => {
+      let currentInput = "";
 
-    return userInput;
+      // Create readline interface
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: prompt,
+      });
+
+      // Set raw mode for immediate key detection
+      if (process.stdin.isTTY) {
+        process.stdin.setRawMode(true);
+      }
+
+      rl.prompt();
+
+      const cleanup = () => {
+        if (process.stdin.isTTY) {
+          process.stdin.setRawMode(false);
+        }
+        rl.close();
+      };
+
+      const handleKeyPress = async (key: Buffer) => {
+        const char = key.toString();
+
+        // Handle special keys
+        if (key[0] === 3) {
+          // Ctrl+C
+          cleanup();
+          process.exit(0);
+        }
+
+        if (key[0] === 13) {
+          // Enter
+          cleanup();
+          console.log(); // New line
+          resolve(currentInput);
+          return;
+        }
+
+        if (key[0] === 127) {
+          // Backspace
+          if (currentInput.length > 0) {
+            currentInput = currentInput.slice(0, -1);
+            process.stdout.write("\b \b");
+          }
+          return;
+        }
+
+        // Handle special trigger characters
+        if (char === "/" && currentInput === "") {
+          cleanup();
+          console.log(); // New line
+
+          try {
+            const selectedCommand = await this.showSmartCommandSelector("");
+            if (selectedCommand) {
+              // Execute command directly instead of returning it
+              await this.handleSlashCommand(selectedCommand);
+            }
+          } catch (error) {
+            console.error(chalk.red(`❌ Command error: ${(error as Error).message}`));
+          }
+
+          // Restart input after command execution
+          const newInput = await this.getUserInput(prompt);
+          resolve(newInput);
+          return;
+        }
+
+        if (char === "@" && (currentInput === "" || currentInput.endsWith(" "))) {
+          cleanup();
+          console.log(); // New line
+
+          try {
+            const selectedFile = await this.showSmartFileSelector("");
+            if (selectedFile) {
+              const fileRef = "@" + selectedFile;
+              const newCurrentInput = currentInput === "" ? fileRef : currentInput + fileRef;
+
+              // Continue input with the file reference added
+              const restOfInput = await this.getUserInput(prompt + newCurrentInput);
+              if (restOfInput.trim()) {
+                resolve(newCurrentInput + restOfInput);
+              } else {
+                resolve(newCurrentInput);
+              }
+              return;
+            }
+          } catch (error) {
+            console.error(chalk.red(`❌ File selector error: ${(error as Error).message}`));
+          }
+
+          // Restart input if file selection was cancelled
+          const newInput = await this.getUserInput(prompt);
+          resolve(newInput);
+          return;
+        }
+
+        // Handle regular character input
+        if (char >= " " && char <= "~") {
+          currentInput += char;
+          process.stdout.write(char);
+        }
+      };
+
+      process.stdin.on("data", handleKeyPress);
+
+      // Cleanup on close
+      rl.on("close", () => {
+        process.stdin.removeListener("data", handleKeyPress);
+      });
+    });
   }
 
   /**
    * Show smart file selector with directory navigation
    */
-  private async showSmartFileSelector(prefix: string): Promise<string | null> {
+  private async showSmartFileSelector(_prefix: string): Promise<string | null> {
     let currentPath = "";
 
     while (true) {
