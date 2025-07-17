@@ -172,17 +172,11 @@ export class InteractiveChatSession {
   }
 
   private async getUserInput(prompt: string): Promise<string> {
-    // Use inquirer for more reliable input handling
-    const { userInput } = await inquirer.prompt([
-      {
-        type: "input",
-        name: "userInput",
-        message: prompt.trim(),
-        prefix: "",
-      },
-    ]);
-
-    return userInput;
+    return new Promise((resolve) => {
+      this.rl.question(prompt, (answer) => {
+        resolve(answer);
+      });
+    });
   }
 
   /**
@@ -679,9 +673,7 @@ export class InteractiveChatSession {
 
     try {
       while (loopCount < MAX_LOOP_COUNT) {
-        if (loopCount === 0) {
-          console.log(chalk.blue("🤔 LlamaCLI is thinking..."));
-        }
+        // 移除重复的思考提示，由 ThinkingRenderer 统一处理
 
         let assistantResponseContent = "";
         let toolCallPayload: ToolCallPayload | null = null;

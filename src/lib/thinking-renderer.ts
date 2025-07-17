@@ -31,7 +31,7 @@ export class ThinkingRenderer {
 
     if (this.showThinking) {
       // 显示思考开始的提示
-      console.log(chalk.dim.cyan("💭 [思考] 模型正在分析问题... (输入 /think 查看详情)"));
+      console.log(chalk.blue("🤔 LlamaCLI is thinking..."));
     }
 
     return id;

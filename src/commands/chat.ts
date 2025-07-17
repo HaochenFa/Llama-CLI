@@ -73,9 +73,7 @@ export function registerChatCommand(program: Command) {
       const MAX_LOOP_COUNT = 10;
 
       while (loopCount < MAX_LOOP_COUNT) {
-        if (loopCount === 0) {
-          console.log(chalk.blue("🤔 LlamaCLI is thinking..."));
-        }
+        // 移除重复的思考提示，由 ThinkingRenderer 统一处理
         let assistantResponseContent = "";
         let toolCallPayload: ToolCallPayload | null = null;
         const streamingToolCalls: StreamingToolCall[] = [];
