@@ -38,6 +38,7 @@ export class EnhancedInputHandler {
     let currentInput = "";
     let processingSpecialChar = false;
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         // 显示当前状态的提示符

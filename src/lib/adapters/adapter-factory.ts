@@ -24,10 +24,11 @@ export class AdapterFactory {
       case "ollama":
         return new OllamaAdapter(profile.endpoint, debug);
 
-      case "vllm":
+      case "vllm": {
         // 从配置中获取模型名称，如果没有则使用默认值
         const model = profile.model || "default";
         return new vLLMAdapter(profile.endpoint, debug, model);
+      }
 
       case "openai":
         if (!profile.apiKey) {

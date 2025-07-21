@@ -96,6 +96,7 @@ export class InteractiveChatSession {
   }
 
   private async chatLoop(): Promise<void> {
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         const prompt = this.generatePrompt();
@@ -239,6 +240,7 @@ export class InteractiveChatSession {
       case "quit":
         console.log(chalk.blue("👋 Goodbye!"));
         process.exit(0);
+        break;
       default:
         console.log(chalk.red(`❌ Unknown command: /${cmd}`));
         console.log(chalk.blue("💡 Tip: Use /help to see available commands"));
@@ -432,12 +434,12 @@ export class InteractiveChatSession {
 
     // Compile context and create messages
     const systemPrompt = this.contextCompiler.compile(this.internalContext);
-    let messages: ChatMessage[] = [
+    const messages: ChatMessage[] = [
       { role: "system", content: systemPrompt },
       ...this.internalContext.chat_history,
     ];
 
-    let currentMessages = [...messages];
+    const currentMessages = [...messages];
     let loopCount = 0;
     const MAX_LOOP_COUNT = 10;
 
@@ -629,6 +631,7 @@ export class InteractiveChatSession {
     let memoryText = "";
     let emptyLineCount = 0;
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const line = await this.getUserInput("> ");
 

@@ -316,7 +316,7 @@ async function runFirstTimeSetup() {
   const defaultConfig = AdapterFactory.getDefaultConfig(basicAnswers.llmType);
 
   // Then get type-specific configuration
-  const typeSpecificQuestions = [
+  const typeSpecificQuestions: any[] = [
     {
       type: "input",
       name: "endpoint",
@@ -355,6 +355,7 @@ async function runFirstTimeSetup() {
     name: "model",
     message: "Enter the model name (optional):",
     default: defaultConfig.model || "",
+    validate: (input: string) => true, // Optional field, always valid
   });
 
   // Add service name for openai-compatible
@@ -364,6 +365,7 @@ async function runFirstTimeSetup() {
       name: "serviceName",
       message: "Enter a service name for this OpenAI-compatible API:",
       default: "Custom Service",
+      validate: (input: string) => true, // Optional field, always valid
     });
   }
 

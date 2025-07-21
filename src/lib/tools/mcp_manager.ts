@@ -99,7 +99,7 @@ export const mcp_manager_tool: ToolDefinition = {
 
     try {
       switch (args.action) {
-        case "list":
+        case "list": {
           const servers = mcpConfigManager!.getServers();
           if (servers.length === 0) {
             return 'No MCP servers configured.\n\nTo add a server, use:\nmcp_manager with action="add", server_name="MyServer", command="npx", args=["@modelcontextprotocol/server-filesystem", "/path"]';
@@ -120,8 +120,9 @@ export const mcp_manager_tool: ToolDefinition = {
             .join("\n\n");
 
           return `MCP Servers:\n\n${serverList}`;
+        }
 
-        case "connect":
+        case "connect": {
           if (!args.server_id) {
             return "Error: server_id is required for connect action";
           }
@@ -138,14 +139,16 @@ export const mcp_manager_tool: ToolDefinition = {
 
           await mcpManager!.connectServer(args.server_id);
           return `Successfully connected to MCP server "${serverConfig.name}"`;
+        }
 
-        case "disconnect":
+        case "disconnect": {
           if (!args.server_id) {
             return "Error: server_id is required for disconnect action";
           }
 
           await mcpManager!.disconnectServer(args.server_id);
           return `Disconnected from MCP server "${args.server_id}"`;
+        }
 
         case "status":
           return mcpToolAdapter!.getServersSummary();
@@ -159,7 +162,7 @@ export const mcp_manager_tool: ToolDefinition = {
         case "test":
           return await mcpToolAdapter!.testConnections();
 
-        case "add":
+        case "add": {
           if (!args.server_name || !args.command) {
             return "Error: server_name and command are required for add action";
           }
@@ -178,8 +181,9 @@ export const mcp_manager_tool: ToolDefinition = {
           });
 
           return `Successfully added MCP server "${args.server_name}" with ID "${newServerId}"`;
+        }
 
-        case "remove":
+        case "remove": {
           if (!args.server_id) {
             return "Error: server_id is required for remove action";
           }
@@ -194,16 +198,18 @@ export const mcp_manager_tool: ToolDefinition = {
 
           mcpConfigManager!.removeServer(args.server_id);
           return `Successfully removed MCP server "${args.server_id}"`;
+        }
 
-        case "enable":
+        case "enable": {
           if (!args.server_id) {
             return "Error: server_id is required for enable action";
           }
 
           mcpConfigManager!.setServerEnabled(args.server_id, true);
           return `Enabled MCP server "${args.server_id}"`;
+        }
 
-        case "disable":
+        case "disable": {
           if (!args.server_id) {
             return "Error: server_id is required for disable action";
           }
@@ -217,6 +223,7 @@ export const mcp_manager_tool: ToolDefinition = {
 
           mcpConfigManager!.setServerEnabled(args.server_id, false);
           return `Disabled MCP server "${args.server_id}"`;
+        }
 
         default:
           return `Error: Unknown action "${args.action}". Available actions: list, connect, disconnect, status, tools, resources, test, add, remove, enable, disable`;

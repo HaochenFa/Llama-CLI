@@ -83,7 +83,7 @@ export const search_files_tool: ToolDefinition = {
         patternRegex = new RegExp(`^${regexPattern}$`, "i");
       }
 
-      async function searchDirectory(currentDir: string, currentDepth: number): Promise<void> {
+      const searchDirectory = async (currentDir: string, currentDepth: number): Promise<void> => {
         if (currentDepth > max_depth || results.length >= max_results) {
           return;
         }
@@ -182,7 +182,7 @@ export const search_files_tool: ToolDefinition = {
           // Skip directories we can't read (permission issues, etc.)
           return;
         }
-      }
+      };
 
       await searchDirectory(directory, 0);
 

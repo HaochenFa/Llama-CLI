@@ -171,7 +171,7 @@ export class GeminiAdapter implements LLMAdapter {
           });
           break;
 
-        case "assistant":
+        case "assistant": {
           const parts: any[] = [{ text: msg.content }];
 
           // 添加工具调用
@@ -191,6 +191,7 @@ export class GeminiAdapter implements LLMAdapter {
             parts,
           });
           break;
+        }
 
         case "tool":
           // 工具响应消息

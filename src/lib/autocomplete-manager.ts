@@ -3,6 +3,7 @@ import { FileContextManager } from "./file-context-manager.js";
 import { TriggerContext } from "./special-char-detector.js";
 import chalk from "chalk";
 import * as path from "path";
+import fs from "fs";
 
 export interface AutocompleteChoice {
   name: string;
@@ -292,7 +293,6 @@ export class AutocompleteManager {
    */
   private getFileSize(filePath: string): string {
     try {
-      const fs = require("fs");
       const stats = fs.statSync(filePath);
       const size = stats.size;
 

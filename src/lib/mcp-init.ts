@@ -105,7 +105,7 @@ export function getMcpStatus(): { servers: number; connectedServers: number; too
     const connectedServers = servers.filter((s: any) => s.status === "connected").length;
 
     // Get tool count (this would need to be implemented in the manager)
-    let toolCount = 0;
+    const toolCount = 0;
     try {
       // This is a placeholder - we'd need to implement getAllTools in the manager
       // toolCount = await mcpManager.getAllTools().then(tools => tools.length);

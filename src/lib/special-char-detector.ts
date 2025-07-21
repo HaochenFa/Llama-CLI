@@ -151,7 +151,7 @@ export class SpecialCharDetector {
     if (searchText.includes("\n")) return false;
     
     // 允许文件路径中的常见字符
-    const validChars = /^[a-zA-Z0-9._\-\/\\]*$/;
+    const validChars = /^[a-zA-Z0-9._\-/\\]*$/;
     return validChars.test(searchText);
   }
 
@@ -177,7 +177,7 @@ export class SpecialCharDetector {
       
       // 如果长度适中且看起来像文件名
       return context.searchText.length <= 50 && 
-             /^[a-zA-Z0-9._\-\/\\]*$/.test(context.searchText);
+             /^[a-zA-Z0-9._\-/\\]*$/.test(context.searchText);
     }
 
     return false;

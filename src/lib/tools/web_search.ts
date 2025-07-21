@@ -60,7 +60,7 @@ export const web_search_tool: ToolDefinition = {
       const data = response.data;
 
       // Format the results
-      let results = [];
+      const results = [];
 
       // Add instant answer if available
       if (data.Abstract && data.Abstract.trim()) {
