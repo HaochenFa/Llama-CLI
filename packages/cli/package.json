@@ -9,7 +9,7 @@
     "llama": "dist/index.js"
   },
   "scripts": {
-    "build": "node ../../esbuild.config.js",
+    "build": "node ../../esbuild.config.js && tsc --emitDeclarationOnly",
     "dev": "node ../../esbuild.config.js --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",

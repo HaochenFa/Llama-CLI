@@ -1,0 +1,217 @@
+/**
+ * Configuration command implementation
+ * Manages LLM profiles and settings
+ */
+
+import { ConfigStore } from "@llamacli/core";
+import chalk from "chalk";
+import inquirer from "inquirer";
+import { getErrorMessage } from "../utils/error-utils.js";
+
+export interface AddProfileOptions {
+  type?: string;
+  endpoint?: string;
+  model?: string;
+  apiKey?: string;
+}
+
+export class ConfigCommand {
+  constructor(private configStore: ConfigStore) {}
+
+  async listProfiles(): Promise<void> {
+    const profiles = this.configStore.getAllProfiles();
+    const activeProfile = this.configStore.getActiveProfile();
+
+    if (profiles.length === 0) {
+      console.log(chalk.yellow("No profiles configured."));
+      console.log("Run 'llamacli config add <name>' to create your first profile.");
+      return;
+    }
+
+    console.log(chalk.bold("Available Profiles:"));
+    console.log();
+
+    profiles.forEach((profile) => {
+      const isActive = activeProfile && profile.id === activeProfile.id;
+      const marker = isActive ? chalk.green("●") : chalk.gray("○");
+      const name = isActive ? chalk.green.bold(profile.name) : profile.name;
+
+      console.log(`${marker} ${name}`);
+      console.log(`  ID: ${profile.id}`);
+      console.log(`  Type: ${profile.adapter}`);
+      console.log(`  Model: ${profile.model}`);
+      if (profile.description) {
+        console.log(`  Description: ${profile.description}`);
+      }
+      console.log();
+    });
+  }
+
+  async addProfile(name: string, options: AddProfileOptions): Promise<void> {
+    try {
+      // Interactive prompts for missing options
+      const answers = await inquirer.prompt([
+        {
+          type: "list",
+          name: "type",
+          message: "Select LLM type:",
+          choices: ["ollama", "openai", "claude", "vllm"],
+          when: !options.type,
+        },
+        {
+          type: "input",
+          name: "endpoint",
+          message: "Enter API endpoint:",
+          default: (answers: any) => {
+            switch (answers.type || options.type) {
+              case "ollama":
+                return "http://localhost:11434";
+              case "openai":
+                return "https://api.openai.com/v1";
+              default:
+                return "";
+            }
+          },
+          when: !options.endpoint,
+        },
+        {
+          type: "input",
+          name: "model",
+          message: "Enter model name:",
+          default: (answers: any) => {
+            switch (answers.type || options.type) {
+              case "ollama":
+                return "llama3.2";
+              case "openai":
+                return "gpt-4";
+              default:
+                return "";
+            }
+          },
+          when: !options.model,
+        },
+        {
+          type: "password",
+          name: "apiKey",
+          message: "Enter API key (optional):",
+          when: (answers: any) => {
+            if (options.apiKey) return false;
+            const type = answers.type || options.type;
+            return type !== "ollama";
+          },
+        },
+      ]);
+
+      const profile = {
+        id: name.toLowerCase().replace(/\s+/g, "-"),
+        name,
+        description: `${name} profile`,
+        adapter: options.type || answers.type,
+        model: options.model || answers.model,
+        parameters: {
+          temperature: 0.7,
+          max_tokens: 2048,
+          top_p: 0.9,
+        },
+        enabled: true,
+      };
+
+      // Add endpoint and API key if provided
+      if (options.endpoint || answers.endpoint) {
+        (profile as any).endpoint = options.endpoint || answers.endpoint;
+      }
+      if (options.apiKey || answers.apiKey) {
+        (profile as any).apiKey = options.apiKey || answers.apiKey;
+      }
+
+      this.configStore.addProfile(profile);
+      await this.configStore.saveConfig();
+
+      console.log(chalk.green(`✓ Profile '${name}' added successfully!`));
+
+      // Ask if they want to make it active
+      if (this.configStore.getAllProfiles().length === 1) {
+        this.configStore.setActiveProfile(profile.id);
+        await this.configStore.saveConfig();
+        console.log(chalk.green(`✓ Set '${name}' as active profile`));
+      } else {
+        const { makeActive } = await inquirer.prompt([
+          {
+            type: "confirm",
+            name: "makeActive",
+            message: "Make this the active profile?",
+            default: false,
+          },
+        ]);
+
+        if (makeActive) {
+          this.configStore.setActiveProfile(profile.id);
+          await this.configStore.saveConfig();
+          console.log(chalk.green(`✓ Set '${name}' as active profile`));
+        }
+      }
+    } catch (error) {
+      console.error(chalk.red("Failed to add profile:"), getErrorMessage(error));
+      process.exit(1);
+    }
+  }
+
+  async setActiveProfile(name: string): Promise<void> {
+    try {
+      // Find profile by name or ID
+      const profiles = this.configStore.getAllProfiles();
+      const profile = profiles.find((p) => p.name === name || p.id === name);
+
+      if (!profile) {
+        console.error(chalk.red(`Profile '${name}' not found.`));
+        console.log("Available profiles:");
+        profiles.forEach((p) => console.log(`  - ${p.name} (${p.id})`));
+        process.exit(1);
+      }
+
+      this.configStore.setActiveProfile(profile.id);
+      await this.configStore.saveConfig();
+
+      console.log(chalk.green(`✓ Set '${profile.name}' as active profile`));
+    } catch (error) {
+      console.error(chalk.red("Failed to set active profile:"), getErrorMessage(error));
+      process.exit(1);
+    }
+  }
+
+  async removeProfile(name: string): Promise<void> {
+    try {
+      // Find profile by name or ID
+      const profiles = this.configStore.getAllProfiles();
+      const profile = profiles.find((p) => p.name === name || p.id === name);
+
+      if (!profile) {
+        console.error(chalk.red(`Profile '${name}' not found.`));
+        process.exit(1);
+      }
+
+      // Confirm deletion
+      const { confirm } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "confirm",
+          message: `Are you sure you want to remove profile '${profile.name}'?`,
+          default: false,
+        },
+      ]);
+
+      if (!confirm) {
+        console.log("Cancelled.");
+        return;
+      }
+
+      this.configStore.removeProfile(profile.id);
+      await this.configStore.saveConfig();
+
+      console.log(chalk.green(`✓ Profile '${profile.name}' removed successfully!`));
+    } catch (error) {
+      console.error(chalk.red("Failed to remove profile:"), getErrorMessage(error));
+      process.exit(1);
+    }
+  }
+}
