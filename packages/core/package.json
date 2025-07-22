@@ -1,0 +1,48 @@
+{
+  "name": "@llamacli/core",
+  "version": "1.0.0",
+  "description": "Core functionality for LlamaCLI",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../esbuild.config.js && tsc --emitDeclarationOnly",
+    "dev": "node ../../esbuild.config.js --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "llm",
+    "mcp",
+    "tools",
+    "adapters"
+  ],
+  "author": "LlamaCLI Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llamacli/llamacli.git",
+    "directory": "packages/core"
+  }
+}
