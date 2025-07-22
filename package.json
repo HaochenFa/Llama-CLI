@@ -1,0 +1,48 @@
+{
+  "name": "llamacli",
+  "version": "1.0.0",
+  "description": "AI-powered command line development partner",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspace=@llamacli/cli",
+    "test": "vitest",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "format": "prettier --write packages/*/src/**/*.ts",
+    "clean": "rm -rf packages/*/dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "llm",
+    "development",
+    "assistant",
+    "mcp"
+  ],
+  "author": "LlamaCLI Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llamacli/llamacli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/llamacli/llamacli/issues"
+  },
+  "homepage": "https://github.com/llamacli/llamacli#readme"
+}
