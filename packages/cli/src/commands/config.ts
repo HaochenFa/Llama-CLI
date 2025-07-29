@@ -3,7 +3,7 @@
  * Manages LLM profiles and settings
  */
 
-import { ConfigStore } from "@llamacli/core";
+import { ConfigStore, LLMProfile } from "@llamacli/core";
 import chalk from "chalk";
 import inquirer from "inquirer";
 import { getErrorMessage } from "../utils/error-utils.js";
@@ -31,7 +31,7 @@ export class ConfigCommand {
     console.log(chalk.bold("Available Profiles:"));
     console.log();
 
-    profiles.forEach((profile) => {
+    profiles.forEach((profile: LLMProfile) => {
       const isActive = activeProfile && profile.id === activeProfile.id;
       const marker = isActive ? chalk.green("●") : chalk.gray("○");
       const name = isActive ? chalk.green.bold(profile.name) : profile.name;
@@ -160,12 +160,12 @@ export class ConfigCommand {
     try {
       // Find profile by name or ID
       const profiles = this.configStore.getAllProfiles();
-      const profile = profiles.find((p) => p.name === name || p.id === name);
+      const profile = profiles.find((p: LLMProfile) => p.name === name || p.id === name);
 
       if (!profile) {
         console.error(chalk.red(`Profile '${name}' not found.`));
         console.log("Available profiles:");
-        profiles.forEach((p) => console.log(`  - ${p.name} (${p.id})`));
+        profiles.forEach((p: LLMProfile) => console.log(`  - ${p.name} (${p.id})`));
         process.exit(1);
       }
 
@@ -183,7 +183,7 @@ export class ConfigCommand {
     try {
       // Find profile by name or ID
       const profiles = this.configStore.getAllProfiles();
-      const profile = profiles.find((p) => p.name === name || p.id === name);
+      const profile = profiles.find((p: LLMProfile) => p.name === name || p.id === name);
 
       if (!profile) {
         console.error(chalk.red(`Profile '${name}' not found.`));

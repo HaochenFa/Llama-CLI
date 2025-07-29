@@ -3,7 +3,7 @@
  */
 
 import { Command } from "commander";
-import { LlamaCLIConfig, loadConfig, validateConfig } from "@llamacli/core";
+import { LlamaCLIConfig, loadConfig, validateConfig, LLMProfile } from "@llamacli/core";
 import { CLIContext } from "../types/cli.js";
 import { Logger } from "../utils/logger.js";
 import { ErrorHandler } from "../utils/error-handler.js";
@@ -100,7 +100,7 @@ export abstract class BaseCommand {
 
       // Override profile if specified
       if (options.profile && this.config?.llm?.profiles) {
-        const profile = this.config.llm.profiles.find((p) => p.name === options.profile);
+        const profile = this.config.llm.profiles.find((p: LLMProfile) => p.name === options.profile);
         if (!profile) {
           throw new Error(`Profile not found: ${options.profile}`);
         }
@@ -117,7 +117,7 @@ export abstract class BaseCommand {
       };
 
       const defaultProfile = this.config?.llm?.profiles?.find(
-        (p) => p.id === this.config?.llm?.defaultProfile
+        (p: LLMProfile) => p.id === this.config?.llm?.defaultProfile
       );
       this.logger.debug("Command context initialized", {
         config: options.config,
