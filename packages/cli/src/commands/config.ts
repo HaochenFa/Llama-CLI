@@ -18,6 +18,52 @@ export interface AddProfileOptions {
 export class ConfigCommand {
   constructor(private configStore: ConfigStore) {}
 
+  /**
+   * Setup wizard for first-time users or when no profiles exist
+   */
+  async setupWizard(): Promise<void> {
+    console.log(chalk.blue("🚀 Welcome to LlamaCLI!"));
+    console.log("It looks like you don't have any profiles configured yet.");
+    console.log("Let's create your first profile to get started.\n");
+
+    const { shouldSetup } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "shouldSetup",
+        message: "Would you like to create a profile now?",
+        default: true,
+      },
+    ]);
+
+    if (!shouldSetup) {
+      console.log(chalk.yellow("You can create a profile later with: llamacli config add <name>"));
+      process.exit(0);
+    }
+
+    const { profileName } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "profileName",
+        message: "Enter a name for your first profile:",
+        default: "My First Profile",
+        validate: (input: string) => {
+          if (!input.trim()) {
+            return "Profile name cannot be empty";
+          }
+          return true;
+        },
+      },
+    ]);
+
+    try {
+      await this.addProfile(profileName.trim(), {});
+      console.log(chalk.green("\n🎉 Setup complete! You can now use LlamaCLI."));
+    } catch (error) {
+      console.error(chalk.red("Failed to create profile:"), getErrorMessage(error));
+      process.exit(1);
+    }
+  }
+
   async listProfiles(): Promise<void> {
     const profiles = this.configStore.getAllProfiles();
     const activeProfile = this.configStore.getActiveProfile();
@@ -190,12 +236,28 @@ export class ConfigCommand {
         process.exit(1);
       }
 
+      // Check if this is the last profile
+      const isLastProfile = profiles.length === 1;
+      const isActiveProfile = profile.id === this.configStore.getConfig().llm.defaultProfile;
+
+      // Prepare confirmation message
+      let confirmMessage = `Are you sure you want to remove profile '${profile.name}'?`;
+      if (isLastProfile) {
+        confirmMessage += chalk.yellow(
+          "\n⚠️  This is your last profile. After removal, you'll need to create a new profile to use LlamaCLI."
+        );
+      } else if (isActiveProfile) {
+        confirmMessage += chalk.yellow(
+          "\n⚠️  This is your active profile. Another profile will be automatically activated."
+        );
+      }
+
       // Confirm deletion
       const { confirm } = await inquirer.prompt([
         {
           type: "confirm",
           name: "confirm",
-          message: `Are you sure you want to remove profile '${profile.name}'?`,
+          message: confirmMessage,
           default: false,
         },
       ]);
@@ -209,6 +271,16 @@ export class ConfigCommand {
       await this.configStore.saveConfig();
 
       console.log(chalk.green(`✓ Profile '${profile.name}' removed successfully!`));
+
+      // Show next steps if this was the last profile
+      if (isLastProfile) {
+        console.log(chalk.yellow("💡 To create a new profile, run: llamacli config add <name>"));
+      } else if (isActiveProfile) {
+        const newActiveProfile = this.configStore.getActiveProfile();
+        if (newActiveProfile) {
+          console.log(chalk.green(`✓ '${newActiveProfile.name}' is now the active profile`));
+        }
+      }
     } catch (error) {
       console.error(chalk.red("Failed to remove profile:"), getErrorMessage(error));
       process.exit(1);

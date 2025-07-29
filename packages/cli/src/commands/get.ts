@@ -9,6 +9,7 @@ import { createContext } from "../utils/context-factory.js";
 import chalk from "chalk";
 import ora from "ora";
 import { getErrorMessage, getErrorStack } from "../utils/error-utils.js";
+import { ConfigCommand } from "./config.js";
 
 export interface GetOptions {
   profile?: string;
@@ -19,18 +20,45 @@ export class GetCommand {
   constructor(private configStore: ConfigStore) {}
 
   async run(query: string, options: GetOptions): Promise<void> {
-    const spinner = ora("Initializing...").start();
+    let spinner = ora("Initializing...").start();
 
     try {
       // Get configuration
       const config = this.configStore.getConfig();
       const profileId = options.profile || config.llm.defaultProfile;
-      const profile = this.configStore.getAllProfiles().find((p: LLMProfile) => p.id === profileId);
+      let profile = this.configStore.getAllProfiles().find((p: LLMProfile) => p.id === profileId);
 
       if (!profile) {
-        spinner.fail("No active profile found. Please configure a profile first.");
-        console.error("Run 'llamacli config add <name>' to create a profile.");
-        process.exit(1);
+        // Check if there are any profiles at all
+        const allProfiles = this.configStore.getAllProfiles();
+        if (allProfiles.length === 0) {
+          // No profiles exist, start setup wizard
+          spinner.stop();
+          const configCommand = new ConfigCommand(this.configStore);
+          await configCommand.setupWizard();
+
+          // After setup, try to get the profile again
+          const updatedConfig = this.configStore.getConfig();
+          const updatedProfileId = options.profile || updatedConfig.llm.defaultProfile;
+          const updatedProfile = this.configStore
+            .getAllProfiles()
+            .find((p: LLMProfile) => p.id === updatedProfileId);
+
+          if (!updatedProfile) {
+            console.error("Setup was cancelled or failed. Cannot process query.");
+            process.exit(1);
+          }
+
+          // Use the newly created profile and restart spinner
+          profile = updatedProfile;
+          spinner = ora("Initializing...").start();
+        } else {
+          // Profiles exist but the specified one wasn't found
+          spinner.fail(`Profile '${profileId}' not found.`);
+          console.error("Available profiles:");
+          allProfiles.forEach((p: LLMProfile) => console.error(`  - ${p.name} (${p.id})`));
+          process.exit(1);
+        }
       }
 
       spinner.text = `Connecting to ${profile.name}...`;

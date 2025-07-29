@@ -10,6 +10,7 @@ import { ConfigStore, LLMProfile } from "@llamacli/core";
 import { createAdapter } from "../utils/adapter-factory.js";
 import { createContext } from "../utils/context-factory.js";
 import { getErrorMessage, getErrorStack } from "../utils/error-utils.js";
+import { ConfigCommand } from "./config.js";
 
 export interface ChatOptions {
   profile?: string;
@@ -27,12 +28,37 @@ export class ChatCommand {
       // Get configuration
       const config = this.configStore.getConfig();
       const profileId = options.profile || config.llm.defaultProfile;
-      const profile = this.configStore.getAllProfiles().find((p: LLMProfile) => p.id === profileId);
+      let profile = this.configStore.getAllProfiles().find((p: LLMProfile) => p.id === profileId);
 
       if (!profile) {
-        console.error("No active profile found. Please configure a profile first.");
-        console.error("Run 'llamacli config add <name>' to create a profile.");
-        process.exit(1);
+        // Check if there are any profiles at all
+        const allProfiles = this.configStore.getAllProfiles();
+        if (allProfiles.length === 0) {
+          // No profiles exist, start setup wizard
+          const configCommand = new ConfigCommand(this.configStore);
+          await configCommand.setupWizard();
+
+          // After setup, try to get the profile again
+          const updatedConfig = this.configStore.getConfig();
+          const updatedProfileId = options.profile || updatedConfig.llm.defaultProfile;
+          const updatedProfile = this.configStore
+            .getAllProfiles()
+            .find((p: LLMProfile) => p.id === updatedProfileId);
+
+          if (!updatedProfile) {
+            console.error("Setup was cancelled or failed. Cannot start chat.");
+            process.exit(1);
+          }
+
+          // Use the newly created profile
+          profile = updatedProfile;
+        } else {
+          // Profiles exist but the specified one wasn't found
+          console.error(`Profile '${profileId}' not found.`);
+          console.error("Available profiles:");
+          allProfiles.forEach((p: LLMProfile) => console.error(`  - ${p.name} (${p.id})`));
+          process.exit(1);
+        }
       }
 
       console.log(`Starting chat with profile: ${profile.name}`);

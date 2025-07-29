@@ -37,7 +37,7 @@ export class ConfigStore {
     try {
       const data = await fs.readFile(this.configPath, "utf8");
       const parsed = JSON.parse(data);
-      
+
       // Validate the loaded config
       const validation = validateConfig(parsed);
       if (!validation.valid) {
@@ -66,14 +66,29 @@ export class ConfigStore {
   }
 
   removeProfile(id: string): void {
-    if (id === this.config.llm.defaultProfile) {
-      throw new Error("Cannot remove active profile");
+    // Check if profile exists
+    const profileExists = this.config.llm.profiles.some((p) => p.id === id);
+    if (!profileExists) {
+      throw new Error(`Profile '${id}' not found`);
     }
-    this.config.llm.profiles = this.config.llm.profiles.filter(p => p.id !== id);
+
+    // Remove the profile
+    this.config.llm.profiles = this.config.llm.profiles.filter((p) => p.id !== id);
+
+    // If we removed the active profile, we need to handle defaultProfile
+    if (id === this.config.llm.defaultProfile) {
+      if (this.config.llm.profiles.length > 0) {
+        // Set the first remaining profile as active
+        this.config.llm.defaultProfile = this.config.llm.profiles[0].id;
+      } else {
+        // No profiles left, clear the default
+        this.config.llm.defaultProfile = "";
+      }
+    }
   }
 
   setActiveProfile(id: string): void {
-    const profile = this.config.llm.profiles.find(p => p.id === id);
+    const profile = this.config.llm.profiles.find((p) => p.id === id);
     if (!profile) {
       throw new Error(`Profile '${id}' not found`);
     }
@@ -82,7 +97,7 @@ export class ConfigStore {
 
   getActiveProfile(): any | null {
     const activeId = this.config.llm.defaultProfile;
-    return this.config.llm.profiles.find(p => p.id === activeId) || null;
+    return this.config.llm.profiles.find((p) => p.id === activeId) || null;
   }
 
   getAllProfiles(): any[] {
