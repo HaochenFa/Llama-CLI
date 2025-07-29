@@ -238,27 +238,6 @@ export const DEFAULT_CONTEXT_SETTINGS: ContextSettings = {
 };
 
 /**
- * Create a new internal context with default values
- */
-export function createDefaultContext(sessionId: string, activeProfile: string): InternalContext {
-  return {
-    sessionId,
-    activeProfile,
-    longTermMemory: [],
-    availableTools: [],
-    fileContext: [],
-    chatHistory: [],
-    sessionMetadata: {
-      createdAt: Date.now(),
-      lastActivity: Date.now(),
-      messageCount: 0,
-      toolCallCount: 0,
-    },
-    settings: { ...DEFAULT_CONTEXT_SETTINGS },
-  };
-}
-
-/**
  * Type guards for runtime type checking
  */
 export function isToolCall(obj: any): obj is ToolCall {

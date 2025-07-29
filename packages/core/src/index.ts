@@ -20,6 +20,7 @@ export {
   LlamaCLIConfig,
   ConfigAdapterConfig,
   LLMConfig,
+  LLMProfile,
   MCPConfig,
   CLIConfig,
   DEFAULT_CONFIG,
@@ -43,8 +44,33 @@ export * from "./mcp/client.js";
 // Tools
 export * from "./tools/index.js";
 
-// Core
-export * from "./core/index.js";
+// Export core types and classes (avoiding conflicts)
+export type {
+  AgentState,
+  AgentStep,
+  AgentPlan,
+  AgentContext,
+  AgentResult,
+  AgentConfig,
+  ToolSchedulerConfig,
+} from "./core/index.js";
+
+export type ToolCategory = string;
+
+// Import needed for createDefaultContextWithParams
+import { createDefaultContext as createDefaultContextInternal } from "./context/context.js";
+import type { InternalContext } from "./types/context.js";
+
+// Enhanced createDefaultContext function
+export function createDefaultContextWithParams(
+  sessionId: string,
+  activeProfile: string
+): InternalContext {
+  return createDefaultContextInternal(sessionId, activeProfile);
+}
+
+// MCP Server
+export { BuiltinMCPServer, createMCPServer } from "./mcp/server.js";
 
 // Utils
 export * from "./utils/index.js";
@@ -58,9 +84,20 @@ export { OllamaAdapter } from "./adapters/ollama.js";
 
 export { createMCPClient } from "./mcp/client.js";
 
-export { createDefaultToolRegistry, createTool, getAvailableTools } from "./tools/index.js";
+// Tool system exports
+export {
+  BaseTool,
+  ToolRegistry,
+  globalToolRegistry,
+  getToolsByCategory,
+  getToolStats,
+  initializeTools,
+  ToolExecutor,
+  ToolDiscovery,
+} from "./tools/index.js";
 
-export { createContextManager, createSessionManager, SessionState } from "./core/index.js";
+// Core system exports
+export { ContextManager, SessionManager, AgenticLoop } from "./core/index.js";
 
 export {
   createDefaultContext,

@@ -1,30 +1,26 @@
 /**
- * Core functionality exports
+ * Core functionality exports for LlamaCLI
  */
 
-// Simple placeholder exports for now
-export const SessionState = {
-  IDLE: "idle",
-  ACTIVE: "active",
-  PAUSED: "paused",
-  TERMINATED: "terminated",
-} as const;
+export { ToolScheduler } from "./tool-scheduler.js";
+export { AgenticLoop, createAgenticLoop } from "./agentic-loop.js";
 
-export type SessionStateType = (typeof SessionState)[keyof typeof SessionState];
+export type { ToolSchedulerConfig } from "./tool-scheduler.js";
 
-// Simple factory functions
-export function createContextManager() {
-  return {
-    // Placeholder implementation
-    getContext: () => ({}),
-    updateContext: () => {},
-  };
+export type {
+  AgentState,
+  AgentStep,
+  AgentPlan,
+  AgentContext,
+  AgentResult,
+  AgentConfig,
+} from "./agentic-loop.js";
+
+// Placeholder classes for future implementation
+export class ContextManager {
+  // TODO)): Implement context management
 }
 
-export function createSessionManager() {
-  return {
-    // Placeholder implementation
-    createSession: () => ({}),
-    getSession: () => ({}),
-  };
+export class SessionManager {
+  // TODO)): Implement session management
 }
