@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "description": "AI-powered command line development partner",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run clean && npm run build:js && npm run build:types && npm run build:permissions",
+    "build:js": "node esbuild.config.js",
+    "build:types": "tsc --build --force",
+    "build:permissions": "chmod +x packages/cli/dist/index.js",
+    "build:old": "npm run build --workspace=@llamacli/core && npm run build --workspace=@llamacli/cli",
+    "build:parallel": "npm run build --workspaces",
     "dev": "npm run dev --workspace=@llamacli/cli",
     "test": "vitest",
     "lint": "eslint packages/*/src/**/*.ts",
     "format": "prettier --write packages/*/src/**/*.ts",
-    "clean": "rm -rf packages/*/dist",
+    "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
