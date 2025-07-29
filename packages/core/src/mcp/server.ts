@@ -18,7 +18,7 @@ import {
   MCPResourceReadResult,
   createMCPResponse,
   createMCPError,
-} from '../types/mcp.js';
+} from "../types/mcp.js";
 
 /**
  * Tool handler function type
@@ -51,7 +51,8 @@ export class BuiltinMCPServer {
   private config: MCPServerConfig;
   private isRunning = false;
   private activeRequests = 0;
-  private requestQueue: Array<{ request: MCPRequest; resolve: (response: MCPResponse) => void }> = [];
+  private requestQueue: Array<{ request: MCPRequest; resolve: (response: MCPResponse) => void }> =
+    [];
 
   constructor(config: MCPServerConfig) {
     this.config = {
@@ -70,7 +71,7 @@ export class BuiltinMCPServer {
         listChanged: true,
       },
       logging: {
-        level: 'info',
+        level: "info",
       },
     };
   }
@@ -84,7 +85,7 @@ export class BuiltinMCPServer {
     }
 
     this.tools.set(name, { handler, definition });
-    this.log('info', `Tool '${name}' registered successfully`);
+    this.log("info", `Tool '${name}' registered successfully`);
   }
 
   /**
@@ -96,7 +97,7 @@ export class BuiltinMCPServer {
     }
 
     this.resources.set(uri, { handler, definition });
-    this.log('info', `Resource '${uri}' registered successfully`);
+    this.log("info", `Resource '${uri}' registered successfully`);
   }
 
   /**
@@ -105,7 +106,7 @@ export class BuiltinMCPServer {
   unregisterTool(name: string): boolean {
     const result = this.tools.delete(name);
     if (result) {
-      this.log('info', `Tool '${name}' unregistered`);
+      this.log("info", `Tool '${name}' unregistered`);
     }
     return result;
   }
@@ -116,7 +117,7 @@ export class BuiltinMCPServer {
   unregisterResource(uri: string): boolean {
     const result = this.resources.delete(uri);
     if (result) {
-      this.log('info', `Resource '${uri}' unregistered`);
+      this.log("info", `Resource '${uri}' unregistered`);
     }
     return result;
   }
@@ -140,11 +141,19 @@ export class BuiltinMCPServer {
    */
   async handleRequest(request: MCPRequest): Promise<MCPResponse> {
     if (!this.isRunning) {
-      return this.createErrorResponse(request.id, MCPErrorCode.INTERNAL_ERROR, 'Server is not running');
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.INTERNAL_ERROR,
+        "Server is not running"
+      );
     }
 
     if (!this.validateRequest(request)) {
-      return this.createErrorResponse(request.id, MCPErrorCode.INVALID_REQUEST, 'Invalid request format');
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.INVALID_REQUEST,
+        "Invalid request format"
+      );
     }
 
     // Check concurrent request limit
@@ -162,11 +171,92 @@ export class BuiltinMCPServer {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      throw new Error('Server is already running');
+      throw new Error("Server is already running");
     }
 
     this.isRunning = true;
-    this.log('info', `MCP Server '${this.config.name}' started`);
+
+    // Register built-in tools
+    await this.registerBuiltinTools();
+
+    this.log("info", `MCP Server '${this.config.name}' started`);
+  }
+
+  /**
+   * Register all built-in tools
+   */
+  private async registerBuiltinTools(): Promise<void> {
+    try {
+      // Import and register filesystem tools
+      const { ReadFileTool, WriteFileTool, ListDirectoryTool, SearchFilesTool } = await import(
+        "../tools/index.js"
+      );
+      const { ShellExecuteTool } = await import("../tools/index.js");
+
+      // Register filesystem tools
+      const readFileTool = new ReadFileTool();
+      this.registerTool(
+        readFileTool.name,
+        {
+          name: readFileTool.name,
+          description: readFileTool.description,
+          inputSchema: readFileTool.schema,
+        },
+        async (params) => readFileTool.execute(params)
+      );
+
+      const writeFileTool = new WriteFileTool();
+      this.registerTool(
+        writeFileTool.name,
+        {
+          name: writeFileTool.name,
+          description: writeFileTool.description,
+          inputSchema: writeFileTool.schema,
+        },
+        async (params) => writeFileTool.execute(params)
+      );
+
+      const listDirTool = new ListDirectoryTool();
+      this.registerTool(
+        listDirTool.name,
+        {
+          name: listDirTool.name,
+          description: listDirTool.description,
+          inputSchema: listDirTool.schema,
+        },
+        async (params) => listDirTool.execute(params)
+      );
+
+      const searchTool = new SearchFilesTool();
+      this.registerTool(
+        searchTool.name,
+        {
+          name: searchTool.name,
+          description: searchTool.description,
+          inputSchema: searchTool.schema,
+        },
+        async (params) => searchTool.execute(params)
+      );
+
+      // Register shell tool
+      const shellTool = new ShellExecuteTool();
+      this.registerTool(
+        shellTool.name,
+        {
+          name: shellTool.name,
+          description: shellTool.description,
+          inputSchema: shellTool.schema,
+        },
+        async (params) => shellTool.execute(params)
+      );
+
+      this.log("info", "Built-in tools registered successfully");
+    } catch (error) {
+      this.log(
+        "error",
+        `Failed to register built-in tools: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
   }
 
   /**
@@ -178,19 +268,21 @@ export class BuiltinMCPServer {
     }
 
     this.isRunning = false;
-    
+
     // Wait for active requests to complete
     while (this.activeRequests > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     // Clear request queue
     this.requestQueue.forEach(({ request, resolve }) => {
-      resolve(this.createErrorResponse(request.id, MCPErrorCode.INTERNAL_ERROR, 'Server is shutting down'));
+      resolve(
+        this.createErrorResponse(request.id, MCPErrorCode.INTERNAL_ERROR, "Server is shutting down")
+      );
     });
     this.requestQueue = [];
 
-    this.log('info', `MCP Server '${this.config.name}' stopped`);
+    this.log("info", `MCP Server '${this.config.name}' stopped`);
   }
 
   /**
@@ -219,16 +311,16 @@ export class BuiltinMCPServer {
     try {
       const timeoutPromise = new Promise<MCPResponse>((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Request timeout'));
+          reject(new Error("Request timeout"));
         }, this.config.requestTimeout);
       });
 
       const requestPromise = this.executeRequest(request);
       const response = await Promise.race([requestPromise, timeoutPromise]);
-      
+
       return response;
     } catch (error) {
-      this.log('error', `Request processing failed: ${error}`);
+      this.log("error", `Request processing failed: ${error}`);
       return this.handleError(error as Error, request.id);
     } finally {
       this.activeRequests--;
@@ -241,18 +333,22 @@ export class BuiltinMCPServer {
    */
   private async executeRequest(request: MCPRequest): Promise<MCPResponse> {
     switch (request.method) {
-      case 'initialize':
+      case "initialize":
         return this.handleInitialize(request);
-      case 'tools/list':
+      case "tools/list":
         return this.handleToolsList(request);
-      case 'tools/call':
+      case "tools/call":
         return this.handleToolCall(request);
-      case 'resources/list':
+      case "resources/list":
         return this.handleResourcesList(request);
-      case 'resources/read':
+      case "resources/read":
         return this.handleResourceRead(request);
       default:
-        return this.createErrorResponse(request.id, MCPErrorCode.METHOD_NOT_FOUND, `Method '${request.method}' not found`);
+        return this.createErrorResponse(
+          request.id,
+          MCPErrorCode.METHOD_NOT_FOUND,
+          `Method '${request.method}' not found`
+        );
     }
   }
 
@@ -261,7 +357,7 @@ export class BuiltinMCPServer {
    */
   private handleInitialize(request: MCPRequest): MCPResponse {
     return createMCPResponse(request.id, {
-      protocolVersion: '2024-11-05',
+      protocolVersion: "2024-11-05",
       capabilities: this.capabilities,
       serverInfo: this.getServerInfo(),
     });
@@ -281,22 +377,34 @@ export class BuiltinMCPServer {
    */
   private async handleToolCall(request: MCPRequest): Promise<MCPResponse> {
     const params = request.params as MCPToolCallParams;
-    
+
     if (!params || !params.name) {
-      return this.createErrorResponse(request.id, MCPErrorCode.INVALID_PARAMS, 'Tool name is required');
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.INVALID_PARAMS,
+        "Tool name is required"
+      );
     }
 
     const tool = this.tools.get(params.name);
     if (!tool) {
-      return this.createErrorResponse(request.id, MCPErrorCode.TOOL_NOT_FOUND, `Tool '${params.name}' not found`);
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.TOOL_NOT_FOUND,
+        `Tool '${params.name}' not found`
+      );
     }
 
     try {
       const result = await tool.handler(params.arguments || {});
       return createMCPResponse(request.id, result);
     } catch (error) {
-      this.log('error', `Tool '${params.name}' execution failed: ${error}`);
-      return this.createErrorResponse(request.id, MCPErrorCode.TOOL_EXECUTION_ERROR, `Tool execution failed: ${error}`);
+      this.log("error", `Tool '${params.name}' execution failed: ${error}`);
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.TOOL_EXECUTION_ERROR,
+        `Tool execution failed: ${error}`
+      );
     }
   }
 
@@ -314,22 +422,34 @@ export class BuiltinMCPServer {
    */
   private async handleResourceRead(request: MCPRequest): Promise<MCPResponse> {
     const params = request.params as MCPResourceReadParams;
-    
+
     if (!params || !params.uri) {
-      return this.createErrorResponse(request.id, MCPErrorCode.INVALID_PARAMS, 'Resource URI is required');
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.INVALID_PARAMS,
+        "Resource URI is required"
+      );
     }
 
     const resource = this.resources.get(params.uri);
     if (!resource) {
-      return this.createErrorResponse(request.id, MCPErrorCode.RESOURCE_NOT_FOUND, `Resource '${params.uri}' not found`);
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.RESOURCE_NOT_FOUND,
+        `Resource '${params.uri}' not found`
+      );
     }
 
     try {
       const result = await resource.handler(params);
       return createMCPResponse(request.id, result);
     } catch (error) {
-      this.log('error', `Resource '${params.uri}' read failed: ${error}`);
-      return this.createErrorResponse(request.id, MCPErrorCode.RESOURCE_ACCESS_DENIED, `Resource access failed: ${error}`);
+      this.log("error", `Resource '${params.uri}' read failed: ${error}`);
+      return this.createErrorResponse(
+        request.id,
+        MCPErrorCode.RESOURCE_ACCESS_DENIED,
+        `Resource access failed: ${error}`
+      );
     }
   }
 
@@ -349,9 +469,10 @@ export class BuiltinMCPServer {
   private validateRequest(request: MCPRequest): boolean {
     return (
       request &&
-      request.jsonrpc === '2.0' &&
-      typeof request.method === 'string' &&
-      (request.id !== undefined && request.id !== null)
+      request.jsonrpc === "2.0" &&
+      typeof request.method === "string" &&
+      request.id !== undefined &&
+      request.id !== null
     );
   }
 
@@ -359,19 +480,23 @@ export class BuiltinMCPServer {
    * Handle errors and create error response
    */
   private handleError(error: Error, requestId: string | number): MCPResponse {
-    if (error.message.includes('timeout')) {
-      return this.createErrorResponse(requestId, MCPErrorCode.TIMEOUT_ERROR, 'Request timeout');
+    if (error.message.includes("timeout")) {
+      return this.createErrorResponse(requestId, MCPErrorCode.TIMEOUT_ERROR, "Request timeout");
     }
-    
+
     return this.createErrorResponse(requestId, MCPErrorCode.INTERNAL_ERROR, error.message);
   }
 
   /**
    * Create error response
    */
-  private createErrorResponse(id: string | number, code: MCPErrorCode, message: string): MCPResponse {
+  private createErrorResponse(
+    id: string | number,
+    code: MCPErrorCode,
+    message: string
+  ): MCPResponse {
     return {
-      jsonrpc: '2.0',
+      jsonrpc: "2.0",
       id,
       error: createMCPError(code, message),
     };
@@ -380,7 +505,7 @@ export class BuiltinMCPServer {
   /**
    * Log messages
    */
-  private log(level: 'debug' | 'info' | 'warning' | 'error', message: string): void {
+  private log(level: "debug" | "info" | "warning" | "error", message: string): void {
     if (!this.config.enableLogging) {
       return;
     }
