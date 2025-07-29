@@ -4,21 +4,23 @@
  */
 
 // Base tool infrastructure
-export {
-  BaseTool,
-  ToolRegistry,
-  globalToolRegistry,
-} from './base.js';
+export { BaseTool, ToolRegistry, globalToolRegistry } from "./base.js";
 
 // Import for internal use
-import { BaseTool, globalToolRegistry, ToolParams, ToolContext, ValidationResult } from './base.js';
-import { MCPToolCallResult } from '../types/mcp.js';
+import { BaseTool, globalToolRegistry, ToolParams, ToolContext, ValidationResult } from "./base.js";
+import { MCPToolCallResult } from "../types/mcp.js";
 
-export type {
-  ToolParams,
-  ToolContext,
-  ValidationResult as ToolValidationResult,
-} from './base.js';
+export type { ToolParams, ToolContext, ValidationResult as ToolValidationResult } from "./base.js";
+
+// Tool categories
+export * from "./network/index.js";
+
+// Individual tool exports (without auto-registration to avoid circular dependencies)
+export { ReadFileTool } from "./filesystem/read-file.js";
+export { WriteFileTool } from "./filesystem/write-file.js";
+export { ListDirectoryTool } from "./filesystem/list-directory.js";
+export { SearchFilesTool } from "./filesystem/search-files.js";
+export { ShellExecuteTool } from "./shell/execute.js";
 
 // Additional types for tool system
 export type ToolExecutionStats = {
@@ -37,14 +39,14 @@ export {
   DownloadFileTool,
   networkTools,
   NETWORK_TOOLS_CONFIG,
-} from './network/index.js';
+} from "./network/index.js";
 
 export type {
   WebSearchParams,
   SearchResult,
   HttpRequestParams,
   DownloadParams,
-} from './network/index.js';
+} from "./network/index.js";
 
 // MCP types for tool integration
 export type {
@@ -53,7 +55,7 @@ export type {
   MCPToolCallResult,
   MCPTextContent,
   MCPImageContent,
-} from '../types/mcp.js';
+} from "../types/mcp.js";
 
 /**
  * Get all available tools by category
@@ -61,16 +63,16 @@ export type {
 export function getToolsByCategory(): Record<string, BaseTool[]> {
   const tools = globalToolRegistry.getAll();
   const categories: Record<string, BaseTool[]> = {};
-  
-  tools.forEach(tool => {
+
+  tools.forEach((tool) => {
     const tags = tool.getTags();
     if (tags.length === 0) {
-      if (!categories['uncategorized']) {
-        categories['uncategorized'] = [];
+      if (!categories["uncategorized"]) {
+        categories["uncategorized"] = [];
       }
-      categories['uncategorized'].push(tool);
+      categories["uncategorized"].push(tool);
     } else {
-      tags.forEach(tag => {
+      tags.forEach((tag) => {
         if (!categories[tag]) {
           categories[tag] = [];
         }
@@ -78,7 +80,7 @@ export function getToolsByCategory(): Record<string, BaseTool[]> {
       });
     }
   });
-  
+
   return categories;
 }
 
@@ -89,7 +91,9 @@ export function getToolStats() {
   const stats = globalToolRegistry.getStats();
   return {
     ...stats,
-    totalCategories: stats.uniqueTags + (globalToolRegistry.getAll().some(tool => tool.getTags().length === 0) ? 1 : 0),
+    totalCategories:
+      stats.uniqueTags +
+      (globalToolRegistry.getAll().some((tool) => tool.getTags().length === 0) ? 1 : 0),
   };
 }
 
@@ -100,9 +104,11 @@ export function getToolStats() {
 export function initializeTools(): void {
   // Network tools are auto-registered via their index file
   // Additional tool categories can be initialized here
-  
+
   const stats = getToolStats();
-  console.log(`🔧 Initialized ${stats.totalTools} tools across ${stats.totalCategories} categories`);
+  console.log(
+    `🔧 Initialized ${stats.totalTools} tools across ${stats.totalCategories} categories`
+  );
 }
 
 /**
@@ -173,7 +179,7 @@ export class ToolDiscovery {
    * Search tools by tags
    */
   static findByTags(tags: string[]): BaseTool[] {
-    return tags.flatMap(tag => globalToolRegistry.getByTag(tag));
+    return tags.flatMap((tag) => globalToolRegistry.getByTag(tag));
   }
 
   /**
@@ -188,7 +194,7 @@ export class ToolDiscovery {
    */
   static findByName(pattern: string): BaseTool[] {
     const allTools = globalToolRegistry.getAll();
-    const regex = new RegExp(pattern, 'i');
+    const regex = new RegExp(pattern, "i");
     return allTools.filter((tool: BaseTool) => regex.test(tool.name));
   }
 
@@ -199,9 +205,7 @@ export class ToolDiscovery {
     const allTools = globalToolRegistry.getAll();
     return allTools.filter((tool: BaseTool) => {
       const toolPermissions = tool.getRequiredPermissions();
-      return permissions.some(permission => 
-        toolPermissions.includes(permission)
-      );
+      return permissions.some((permission) => toolPermissions.includes(permission));
     });
   }
 
@@ -211,25 +215,21 @@ export class ToolDiscovery {
   static getRecommendations(taskDescription: string): BaseTool[] {
     const keywords = taskDescription.toLowerCase().split(/\s+/);
     const allTools = globalToolRegistry.getAll();
-    
+
     // Score tools based on keyword matches in name, description, and tags
     const scoredTools = allTools.map((tool: BaseTool) => {
       let score = 0;
-      const searchText = [
-        tool.name,
-        tool.description,
-        ...tool.getTags(),
-      ].join(' ').toLowerCase();
-      
-      keywords.forEach(keyword => {
+      const searchText = [tool.name, tool.description, ...tool.getTags()].join(" ").toLowerCase();
+
+      keywords.forEach((keyword) => {
         if (searchText.includes(keyword)) {
           score += 1;
         }
       });
-      
+
       return { tool, score };
     });
-    
+
     // Return tools with score > 0, sorted by score descending
     return scoredTools
       .filter(({ score }: { score: number }) => score > 0)
