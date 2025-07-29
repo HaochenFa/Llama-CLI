@@ -6,7 +6,7 @@
 import React from "react";
 import { render } from "ink";
 import { ChatInterface } from "../ui/components/ChatInterface.js";
-import { ConfigStore } from "@llamacli/core";
+import { ConfigStore, LLMProfile } from "@llamacli/core";
 import { createAdapter } from "../utils/adapter-factory.js";
 import { createContext } from "../utils/context-factory.js";
 import { getErrorMessage, getErrorStack } from "../utils/error-utils.js";
@@ -27,7 +27,7 @@ export class ChatCommand {
       // Get configuration
       const config = this.configStore.getConfig();
       const profileId = options.profile || config.llm.defaultProfile;
-      const profile = this.configStore.getAllProfiles().find((p) => p.id === profileId);
+      const profile = this.configStore.getAllProfiles().find((p: LLMProfile) => p.id === profileId);
 
       if (!profile) {
         console.error("No active profile found. Please configure a profile first.");
@@ -50,11 +50,51 @@ export class ChatCommand {
         enableTools: options.tools !== false,
       });
 
-      // Create core components (simplified for now)
+      // Create core components with real LLM integration
       const agenticLoop = {
         processUserInput: async (input: string, ctx: any) => {
-          // Simple echo for now - will be implemented properly later
-          return `Echo: ${input}`;
+          // Add user message to context
+          const userMessage = {
+            id: Date.now().toString(),
+            role: "user" as const,
+            content: input,
+            timestamp: Date.now(),
+          };
+
+          ctx.chatHistory = ctx.chatHistory || [];
+          ctx.chatHistory.push(userMessage);
+
+          // Get response from LLM
+          let response = "";
+          const messages = ctx.chatHistory;
+
+          try {
+            for await (const chunk of adapter.chatStream(messages)) {
+              if (chunk.type === "content" && chunk.content) {
+                response += chunk.content;
+              } else if (chunk.type === "error") {
+                throw new Error(chunk.error || "Unknown error");
+              } else if (chunk.type === "done") {
+                break;
+              }
+            }
+
+            // Add assistant message to context
+            const assistantMessage = {
+              id: (Date.now() + 1).toString(),
+              role: "assistant" as const,
+              content: response,
+              timestamp: Date.now(),
+            };
+
+            ctx.chatHistory.push(assistantMessage);
+
+            return response.trim();
+          } catch (error) {
+            throw new Error(
+              `Failed to get response from LLM: ${error instanceof Error ? error.message : "Unknown error"}`
+            );
+          }
         },
       };
 

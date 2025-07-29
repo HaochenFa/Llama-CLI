@@ -3,7 +3,7 @@
  * Provides quick query functionality without interactive session
  */
 
-import { ConfigStore } from "@llamacli/core";
+import { ConfigStore, LLMProfile } from "@llamacli/core";
 import { createAdapter } from "../utils/adapter-factory.js";
 import { createContext } from "../utils/context-factory.js";
 import chalk from "chalk";
@@ -25,7 +25,7 @@ export class GetCommand {
       // Get configuration
       const config = this.configStore.getConfig();
       const profileId = options.profile || config.llm.defaultProfile;
-      const profile = this.configStore.getAllProfiles().find((p) => p.id === profileId);
+      const profile = this.configStore.getAllProfiles().find((p: LLMProfile) => p.id === profileId);
 
       if (!profile) {
         spinner.fail("No active profile found. Please configure a profile first.");
@@ -97,7 +97,7 @@ export class GetCommand {
         timestamp: Date.now(),
       };
 
-      context.chatHistory.push(assistantMessage);
+      context.chatHistory?.push(assistantMessage);
 
       // Disconnect
       await adapter.disconnect();

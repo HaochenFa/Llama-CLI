@@ -2,7 +2,7 @@
  * Context factory for creating internal contexts
  */
 
-import { createDefaultContext, InternalContext } from "@llamacli/core";
+import { createDefaultContextWithParams, InternalContext } from "@llamacli/core";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { getErrorMessage } from "./error-utils.js";
@@ -17,7 +17,7 @@ export async function createContext(options: ContextOptions = {}): Promise<Inter
   const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const activeProfile = "default"; // Will be set properly later
 
-  const context = createDefaultContext(sessionId, activeProfile);
+  const context = createDefaultContextWithParams(sessionId, activeProfile);
 
   // Set working directory
   if (options.workingDirectory) {
@@ -36,7 +36,7 @@ export async function createContext(options: ContextOptions = {}): Promise<Inter
 
         if (stats.isFile()) {
           const content = await fs.readFile(resolvedPath, "utf8");
-          context.fileContext.push({
+          context.fileContext?.push({
             path: resolvedPath,
             content,
             lastModified: stats.mtime.getTime(),
@@ -51,7 +51,9 @@ export async function createContext(options: ContextOptions = {}): Promise<Inter
   }
 
   // Configure tool settings
-  context.settings.enableToolCalls = options.enableTools !== false;
+  if (context.settings) {
+    context.settings.enableToolCalls = options.enableTools !== false;
+  }
 
   return context;
 }
