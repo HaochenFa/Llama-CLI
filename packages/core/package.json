@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "node ../../esbuild.config.js && tsc --emitDeclarationOnly",
+    "build": "node ../../esbuild.config.js && tsc",
     "dev": "node ../../esbuild.config.js --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",

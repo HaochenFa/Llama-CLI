@@ -18,7 +18,6 @@
     "incremental": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": false,
-    "noEmit": true,
     "baseUrl": ".",
     "paths": {
       "@llamacli/core": ["./packages/core/src"],
@@ -27,17 +26,7 @@
       "@llamacli/cli/*": ["./packages/cli/src/*"]
     }
   },
-  "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/cli" }
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
-  "include": [
-    "packages/*/src/**/*"
-  ]
+  "references": [{ "path": "./packages/core" }, { "path": "./packages/cli" }],
+  "exclude": ["node_modules", "**/dist", "packages/*/dist", "**/*.test.ts", "**/*.spec.ts"],
+  "include": ["packages/*/src/**/*"]
 }
