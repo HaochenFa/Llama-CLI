@@ -14,6 +14,7 @@ export type { ToolParams, ToolContext, ValidationResult as ToolValidationResult 
 
 // Tool categories
 export * from "./network/index.js";
+export * from "./analysis/index.js";
 
 // Individual tool exports (without auto-registration to avoid circular dependencies)
 export { ReadFileTool } from "./filesystem/read-file.js";
