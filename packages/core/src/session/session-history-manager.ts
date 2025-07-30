@@ -3,16 +3,16 @@
  * Manages conversation history, session restoration, and branching
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 import {
   SessionMetadata,
   SessionBranch,
   SessionStatus,
   PersistedSession,
-  SessionStorageBackend
-} from '../types/session.js';
-import { ChatMessage } from '../types/context.js';
-import { generateSessionId } from './session-utils.js';
+  SessionStorageBackend,
+} from "../types/session.js";
+import { ChatMessage } from "../types/context.js";
+import { generateSessionId } from "./session-utils.js";
 
 /**
  * History snapshot for point-in-time restoration
@@ -50,7 +50,7 @@ export interface RestorationOptions {
   restoreContext?: boolean;
   restoreMemories?: boolean;
   createBackup?: boolean;
-  mergeStrategy?: 'replace' | 'merge' | 'append';
+  mergeStrategy?: "replace" | "merge" | "append";
 }
 
 /**
@@ -59,7 +59,7 @@ export interface RestorationOptions {
 export interface HistorySearchOptions {
   query: string;
   sessionIds?: string[];
-  messageTypes?: ('user' | 'assistant' | 'system' | 'tool')[];
+  messageTypes?: ("user" | "assistant" | "system" | "tool")[];
   dateRange?: {
     start: number;
     end: number;
@@ -159,11 +159,10 @@ export class SessionHistoryManager extends EventEmitter {
 
       this.snapshots.set(sessionId, sessionSnapshots);
 
-      this.emit('snapshotCreated', snapshot);
+      this.emit("snapshotCreated", snapshot);
       return snapshot;
-
     } catch (error) {
-      this.emit('error', error as Error, 'createSnapshot');
+      this.emit("error", error as Error, "createSnapshot");
       throw error;
     }
   }
@@ -171,10 +170,7 @@ export class SessionHistoryManager extends EventEmitter {
   /**
    * Create a session branch
    */
-  async createBranch(
-    parentSessionId: string,
-    options: BranchOptions
-  ): Promise<string> {
+  async createBranch(parentSessionId: string, options: BranchOptions): Promise<string> {
     try {
       const parentSession = await this.storageBackend.loadSession(parentSessionId);
       if (!parentSession) {
@@ -209,7 +205,7 @@ export class SessionHistoryManager extends EventEmitter {
           parentSessionId,
           branches: [],
           version: 1,
-          checksum: '',
+          checksum: "",
         },
         context: {
           ...parentSession.context,
@@ -230,11 +226,10 @@ export class SessionHistoryManager extends EventEmitter {
       // Save branched session
       await this.storageBackend.saveSession(branchedSession);
 
-      this.emit('branchCreated', branch, parentSessionId);
+      this.emit("branchCreated", branch, parentSessionId);
       return branchSessionId;
-
     } catch (error) {
-      this.emit('error', error as Error, 'createBranch');
+      this.emit("error", error as Error, "createBranch");
       throw error;
     }
   }
@@ -253,7 +248,7 @@ export class SessionHistoryManager extends EventEmitter {
         throw new Error(`No snapshots found for session ${sessionId}`);
       }
 
-      const snapshot = sessionSnapshots.find(s => s.id === snapshotId);
+      const snapshot = sessionSnapshots.find((s) => s.id === snapshotId);
       if (!snapshot) {
         throw new Error(`Snapshot ${snapshotId} not found`);
       }
@@ -265,21 +260,21 @@ export class SessionHistoryManager extends EventEmitter {
 
       // Create backup if requested
       if (options.createBackup) {
-        await this.createSnapshot(sessionId, 'Pre-restoration backup');
+        await this.createSnapshot(sessionId, "Pre-restoration backup");
       }
 
       // Restore chat history
       switch (options.mergeStrategy) {
-        case 'replace':
+        case "replace":
           session.chatHistory = [...snapshot.chatHistory];
           break;
-        case 'merge':
+        case "merge":
           // Merge by keeping unique messages
-          const existingIds = new Set(session.chatHistory.map(m => m.id));
-          const newMessages = snapshot.chatHistory.filter(m => !existingIds.has(m.id));
+          const existingIds = new Set(session.chatHistory.map((m) => m.id));
+          const newMessages = snapshot.chatHistory.filter((m) => !existingIds.has(m.id));
           session.chatHistory = [...session.chatHistory, ...newMessages];
           break;
-        case 'append':
+        case "append":
           session.chatHistory = [...session.chatHistory, ...snapshot.chatHistory];
           break;
         default:
@@ -295,7 +290,10 @@ export class SessionHistoryManager extends EventEmitter {
           session.context.fileContext = [...snapshot.contextSnapshot.fileContext];
         }
         if (snapshot.contextSnapshot.settings) {
-          session.context.settings = { ...session.context.settings, ...snapshot.contextSnapshot.settings };
+          session.context.settings = {
+            ...session.context.settings,
+            ...snapshot.contextSnapshot.settings,
+          };
         }
       }
 
@@ -311,10 +309,9 @@ export class SessionHistoryManager extends EventEmitter {
       // Save restored session
       await this.storageBackend.saveSession(session);
 
-      this.emit('sessionRestored', sessionId, snapshotId);
-
+      this.emit("sessionRestored", sessionId, snapshotId);
     } catch (error) {
-      this.emit('error', error as Error, 'restoreFromSnapshot');
+      this.emit("error", error as Error, "restoreFromSnapshot");
       throw error;
     }
   }
@@ -325,7 +322,7 @@ export class SessionHistoryManager extends EventEmitter {
   async searchHistory(options: HistorySearchOptions): Promise<HistorySearchResult[]> {
     try {
       const results: HistorySearchResult[] = [];
-      const sessionIds = options.sessionIds || await this.getAllSessionIds();
+      const sessionIds = options.sessionIds || (await this.getAllSessionIds());
 
       for (const sessionId of sessionIds) {
         const session = await this.storageBackend.loadSession(sessionId);
@@ -350,7 +347,8 @@ export class SessionHistoryManager extends EventEmitter {
 
           // Search in message content
           const relevanceScore = this.calculateRelevanceScore(message.content, options.query);
-          if (relevanceScore > 0.1) { // Minimum relevance threshold
+          if (relevanceScore > 0.1) {
+            // Minimum relevance threshold
             results.push({
               sessionId,
               messageIndex: i,
@@ -364,15 +362,14 @@ export class SessionHistoryManager extends EventEmitter {
 
       // Sort by relevance and apply limit
       results.sort((a, b) => b.relevanceScore - a.relevanceScore);
-      
+
       if (options.limit) {
         return results.slice(0, options.limit);
       }
 
       return results;
-
     } catch (error) {
-      this.emit('error', error as Error, 'searchHistory');
+      this.emit("error", error as Error, "searchHistory");
       throw error;
     }
   }
@@ -391,7 +388,7 @@ export class SessionHistoryManager extends EventEmitter {
     const sessionSnapshots = this.snapshots.get(sessionId);
     if (!sessionSnapshots) return false;
 
-    const index = sessionSnapshots.findIndex(s => s.id === snapshotId);
+    const index = sessionSnapshots.findIndex((s) => s.id === snapshotId);
     if (index === -1) return false;
 
     sessionSnapshots.splice(index, 1);
@@ -422,7 +419,7 @@ export class SessionHistoryManager extends EventEmitter {
       // Replace old messages with summary
       const summaryMessage: ChatMessage = {
         id: `compressed_${Date.now()}`,
-        role: 'system',
+        role: "system",
         content: `[Compressed History Summary]\n${compressedSummary}`,
         timestamp: Date.now(),
       };
@@ -433,16 +430,15 @@ export class SessionHistoryManager extends EventEmitter {
       session.compressionMetadata = {
         originalSize,
         compressedSize: session.chatHistory.length,
-        algorithm: 'summary',
+        algorithm: "summary",
         timestamp: Date.now(),
       };
 
       await this.storageBackend.saveSession(session);
 
-      this.emit('historyCompressed', sessionId, originalSize, session.chatHistory.length);
-
+      this.emit("historyCompressed", sessionId, originalSize, session.chatHistory.length);
     } catch (error) {
-      this.emit('error', error as Error, 'compressHistory');
+      this.emit("error", error as Error, "compressHistory");
       throw error;
     }
   }
@@ -455,7 +451,7 @@ export class SessionHistoryManager extends EventEmitter {
       const session = await this.storageBackend.loadSession(sessionId);
       return session?.metadata.branches || [];
     } catch (error) {
-      this.emit('error', error as Error, 'getSessionBranches');
+      this.emit("error", error as Error, "getSessionBranches");
       return [];
     }
   }
@@ -465,31 +461,33 @@ export class SessionHistoryManager extends EventEmitter {
    */
   async mergeBranch(
     branchSessionId: string,
-    mergeStrategy: 'append' | 'replace' | 'smart' = 'smart'
+    mergeStrategy: "append" | "replace" | "smart" = "smart"
   ): Promise<void> {
     try {
       const branchSession = await this.storageBackend.loadSession(branchSessionId);
       if (!branchSession || !branchSession.metadata.parentSessionId) {
-        throw new Error('Invalid branch session or missing parent');
+        throw new Error("Invalid branch session or missing parent");
       }
 
-      const parentSession = await this.storageBackend.loadSession(branchSession.metadata.parentSessionId);
+      const parentSession = await this.storageBackend.loadSession(
+        branchSession.metadata.parentSessionId
+      );
       if (!parentSession) {
-        throw new Error('Parent session not found');
+        throw new Error("Parent session not found");
       }
 
       // Create backup before merge
-      await this.createSnapshot(branchSession.metadata.parentSessionId, 'Pre-merge backup');
+      await this.createSnapshot(branchSession.metadata.parentSessionId, "Pre-merge backup");
 
       // Perform merge based on strategy
       switch (mergeStrategy) {
-        case 'append':
+        case "append":
           parentSession.chatHistory = [...parentSession.chatHistory, ...branchSession.chatHistory];
           break;
-        case 'replace':
+        case "replace":
           parentSession.chatHistory = [...branchSession.chatHistory];
           break;
-        case 'smart':
+        case "smart":
           // Smart merge: avoid duplicates and maintain chronological order
           await this.performSmartMerge(parentSession, branchSession);
           break;
@@ -501,16 +499,15 @@ export class SessionHistoryManager extends EventEmitter {
 
       // Remove branch reference
       parentSession.metadata.branches = parentSession.metadata.branches.filter(
-        b => b.id !== branchSessionId
+        (b) => b.id !== branchSessionId
       );
 
       await this.storageBackend.saveSession(parentSession);
 
       // Optionally delete branch session
       // await this.storageBackend.deleteSession(branchSessionId);
-
     } catch (error) {
-      this.emit('error', error as Error, 'mergeBranch');
+      this.emit("error", error as Error, "mergeBranch");
       throw error;
     }
   }
@@ -518,7 +515,7 @@ export class SessionHistoryManager extends EventEmitter {
   // Private helper methods
   private async getAllSessionIds(): Promise<string[]> {
     const sessions = await this.storageBackend.listSessions();
-    return sessions.map(s => s.id);
+    return sessions.map((s) => s.id);
   }
 
   private estimateTokenCount(messages: ChatMessage[]): number {
@@ -527,21 +524,21 @@ export class SessionHistoryManager extends EventEmitter {
   }
 
   private countToolCalls(messages: ChatMessage[]): number {
-    return messages.filter(msg => msg.toolCalls && msg.toolCalls.length > 0).length;
+    return messages.filter((msg) => msg.tool_calls && msg.tool_calls.length > 0).length;
   }
 
   private calculateRelevanceScore(content: string, query: string): number {
     // Simple relevance scoring - in production, use proper text similarity
     const lowerContent = content.toLowerCase();
     const lowerQuery = query.toLowerCase();
-    
+
     if (lowerContent.includes(lowerQuery)) {
       return 1.0;
     }
-    
+
     const queryWords = lowerQuery.split(/\s+/);
-    const matchingWords = queryWords.filter(word => lowerContent.includes(word));
-    
+    const matchingWords = queryWords.filter((word) => lowerContent.includes(word));
+
     return matchingWords.length / queryWords.length;
   }
 
@@ -549,31 +546,34 @@ export class SessionHistoryManager extends EventEmitter {
     const contextRange = 2; // Messages before and after
     const start = Math.max(0, messageIndex - contextRange);
     const end = Math.min(session.chatHistory.length, messageIndex + contextRange + 1);
-    
+
     return session.chatHistory
       .slice(start, end)
-      .map(msg => `${msg.role}: ${msg.content.substring(0, 100)}...`)
-      .join('\n');
+      .map((msg) => `${msg.role}: ${msg.content.substring(0, 100)}...`)
+      .join("\n");
   }
 
   private async createHistorySummary(messages: ChatMessage[]): Promise<string> {
     // Simple summary creation - in production, use LLM for better summaries
-    const userMessages = messages.filter(m => m.role === 'user').length;
-    const assistantMessages = messages.filter(m => m.role === 'assistant').length;
+    const userMessages = messages.filter((m) => m.role === "user").length;
+    const assistantMessages = messages.filter((m) => m.role === "assistant").length;
     const toolCalls = this.countToolCalls(messages);
-    
+
     return `Compressed ${messages.length} messages (${userMessages} user, ${assistantMessages} assistant, ${toolCalls} tool calls) from conversation history.`;
   }
 
-  private async performSmartMerge(parentSession: PersistedSession, branchSession: PersistedSession): Promise<void> {
+  private async performSmartMerge(
+    parentSession: PersistedSession,
+    branchSession: PersistedSession
+  ): Promise<void> {
     // Smart merge implementation - avoid duplicates, maintain order
-    const parentIds = new Set(parentSession.chatHistory.map(m => m.id));
-    const newMessages = branchSession.chatHistory.filter(m => !parentIds.has(m.id));
-    
+    const parentIds = new Set(parentSession.chatHistory.map((m) => m.id));
+    const newMessages = branchSession.chatHistory.filter((m) => !parentIds.has(m.id));
+
     // Merge and sort by timestamp
     const allMessages = [...parentSession.chatHistory, ...newMessages];
     allMessages.sort((a, b) => a.timestamp - b.timestamp);
-    
+
     parentSession.chatHistory = allMessages;
   }
 }

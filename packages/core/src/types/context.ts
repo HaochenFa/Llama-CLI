@@ -98,9 +98,9 @@ export interface ToolResult {
 }
 
 /**
- * Session metadata
+ * Context session metadata (legacy)
  */
-export interface SessionMetadata {
+export interface ContextSessionMetadata {
   createdAt: number;
   lastActivity: number;
   messageCount: number;
@@ -141,7 +141,7 @@ export interface InternalContext {
   availableTools: ToolDefinition[];
   fileContext: FileContext[];
   chatHistory: ChatMessage[];
-  sessionMetadata: SessionMetadata;
+  sessionMetadata: ContextSessionMetadata;
   settings: ContextSettings;
   workingDirectory?: string;
   environmentVariables?: Record<string, string>;
