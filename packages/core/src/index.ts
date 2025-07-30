@@ -31,6 +31,12 @@ export {
   loadConfig,
 } from "./config/config.js";
 export * from "./config/store.js";
+export * from "./config/user-preferences.js";
+
+// Error handling
+export * from "./error/enhanced-error-handler.js";
+export * from "./error/error-reporter.js";
+export * from "./error/error-middleware.js";
 
 // Context
 export * from "./context/context.js";
@@ -82,6 +88,10 @@ export * from "./session/index.js";
 
 // Utils
 export * from "./utils/index.js";
+
+// Performance
+export * from "./performance/benchmark.js";
+export * from "./performance/monitor.js";
 
 // Version
 export const VERSION = "0.1.0";

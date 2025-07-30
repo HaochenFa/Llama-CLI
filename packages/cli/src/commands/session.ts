@@ -11,7 +11,6 @@ import {
   SessionManager,
   SessionHistoryManager,
   FileStorageBackend,
-  SessionMetadata,
   SessionStatus,
   SessionPriority,
   SessionExportFormat,
@@ -19,8 +18,9 @@ import {
   getSessionStatusColor,
   getSessionPrioritySymbol,
   exportSession,
-  importSession
+  importSession,
 } from "@llamacli/core";
+import type { SessionMetadata } from "@llamacli/core";
 
 import { BaseCommand, BaseCommandOptions } from "./base.js";
 
@@ -28,7 +28,7 @@ import { BaseCommand, BaseCommandOptions } from "./base.js";
  * Session command options
  */
 interface SessionCommandOptions extends BaseCommandOptions {
-  format?: 'table' | 'json' | 'yaml';
+  format?: "table" | "json" | "yaml";
   status?: string[];
   priority?: string[];
   tags?: string[];
@@ -187,11 +187,11 @@ export class SessionCommand extends BaseCommand {
     const filter: any = {};
 
     if (options.status) {
-      filter.status = options.status.map(s => s.toUpperCase() as SessionStatus);
+      filter.status = options.status.map((s) => s.toUpperCase() as SessionStatus);
     }
 
     if (options.priority) {
-      filter.priority = options.priority.map(p => p.toUpperCase() as SessionPriority);
+      filter.priority = options.priority.map((p) => p.toUpperCase() as SessionPriority);
     }
 
     if (options.tags) {
@@ -271,7 +271,10 @@ export class SessionCommand extends BaseCommand {
     this.logger.info(`Switched to session: ${chalk.green(sessionId)}`);
   }
 
-  private async deleteSession(options: SessionCommandOptions & { force?: boolean }, sessionId: string): Promise<void> {
+  private async deleteSession(
+    options: SessionCommandOptions & { force?: boolean },
+    sessionId: string
+  ): Promise<void> {
     if (!this.sessionManager) {
       throw new Error("Session manager not initialized");
     }
@@ -323,23 +326,26 @@ export class SessionCommand extends BaseCommand {
     const exportedData = await exportSession(persistedSession, exportOptions);
 
     if (options.output) {
-      await fs.writeFile(options.output, exportedData, 'utf8');
+      await fs.writeFile(options.output, exportedData, "utf8");
       this.logger.info(`Session exported to: ${chalk.green(options.output)}`);
     } else {
       console.log(exportedData);
     }
   }
 
-  private async importSession(options: SessionCommandOptions & { name?: string; encryptionKey?: string }, file: string): Promise<void> {
+  private async importSession(
+    options: SessionCommandOptions & { name?: string; encryptionKey?: string },
+    file: string
+  ): Promise<void> {
     if (!this.sessionManager) {
       throw new Error("Session manager not initialized");
     }
 
-    const data = await fs.readFile(file, 'utf8');
+    const data = await fs.readFile(file, "utf8");
     const importResult = await importSession(data, options.encryptionKey);
 
     if (!importResult.success) {
-      throw new Error(`Import failed: ${importResult.errors.join(', ')}`);
+      throw new Error(`Import failed: ${importResult.errors.join(", ")}`);
     }
 
     if (importResult.warnings.length > 0) {
@@ -393,14 +399,18 @@ export class SessionCommand extends BaseCommand {
 
     // Display stats table
     console.log(chalk.bold("\n📊 Session Statistics\n"));
-    
+
     console.log(`Total Sessions: ${chalk.cyan(stats.totalSessions)}`);
     console.log(`Total Size: ${chalk.cyan(this.formatSize(stats.totalSize))}`);
     console.log(`Average Size: ${chalk.cyan(this.formatSize(stats.averageSessionSize))}`);
-    
+
     if (stats.totalSessions > 0) {
-      console.log(`Oldest Session: ${chalk.gray(new Date(stats.oldestSession).toLocaleDateString())}`);
-      console.log(`Newest Session: ${chalk.gray(new Date(stats.newestSession).toLocaleDateString())}`);
+      console.log(
+        `Oldest Session: ${chalk.gray(new Date(stats.oldestSession).toLocaleDateString())}`
+      );
+      console.log(
+        `Newest Session: ${chalk.gray(new Date(stats.newestSession).toLocaleDateString())}`
+      );
     }
 
     console.log(chalk.bold("\nBy Status:"));
@@ -420,7 +430,9 @@ export class SessionCommand extends BaseCommand {
     }
   }
 
-  private async cleanupSessions(options: SessionCommandOptions & { maxAge?: number; maxSessions?: number; dryRun?: boolean }): Promise<void> {
+  private async cleanupSessions(
+    options: SessionCommandOptions & { maxAge?: number; maxSessions?: number; dryRun?: boolean }
+  ): Promise<void> {
     if (!this.sessionManager) {
       throw new Error("Session manager not initialized");
     }
@@ -457,7 +469,12 @@ export class SessionCommand extends BaseCommand {
   }
 
   private async createBranch(
-    options: SessionCommandOptions & { description?: string; messageIndex?: number; copyContext?: boolean; copyMemories?: boolean },
+    options: SessionCommandOptions & {
+      description?: string;
+      messageIndex?: number;
+      copyContext?: boolean;
+      copyMemories?: boolean;
+    },
     sessionId: string,
     branchName: string
   ): Promise<void> {
@@ -495,7 +512,7 @@ export class SessionCommand extends BaseCommand {
     }
 
     console.log(chalk.bold(`\n🌿 Branches for session ${sessionId}\n`));
-    
+
     for (const branch of branches) {
       console.log(`${chalk.green(branch.id)} - ${chalk.bold(branch.name)}`);
       if (branch.description) {
@@ -511,8 +528,8 @@ export class SessionCommand extends BaseCommand {
   private displaySessionsTable(sessions: SessionMetadata[]): void {
     console.log(chalk.bold("\n📋 Sessions\n"));
 
-    const maxNameLength = Math.max(20, Math.max(...sessions.map(s => s.name.length)));
-    const maxIdLength = Math.max(10, Math.max(...sessions.map(s => s.id.length)));
+    const maxNameLength = Math.max(20, Math.max(...sessions.map((s) => s.name.length)));
+    const maxIdLength = Math.max(10, Math.max(...sessions.map((s) => s.id.length)));
 
     // Header
     console.log(
@@ -547,13 +564,13 @@ export class SessionCommand extends BaseCommand {
 
     const statusColor = getSessionStatusColor(metadata.status);
     const prioritySymbol = getSessionPrioritySymbol(metadata.priority);
-    
+
     console.log(`Status: ${chalk.hex(statusColor)(metadata.status)}`);
     console.log(`Priority: ${prioritySymbol} ${metadata.priority}`);
-    
+
     console.log(`Created: ${chalk.gray(new Date(metadata.createdAt).toLocaleString())}`);
     console.log(`Last Activity: ${chalk.gray(new Date(metadata.lastActivity).toLocaleString())}`);
-    
+
     if (metadata.completedAt) {
       console.log(`Completed: ${chalk.gray(new Date(metadata.completedAt).toLocaleString())}`);
     }
@@ -565,7 +582,7 @@ export class SessionCommand extends BaseCommand {
     console.log(`Profile: ${chalk.cyan(metadata.activeProfile)}`);
 
     if (metadata.tags.length > 0) {
-      console.log(`Tags: ${metadata.tags.map(tag => chalk.blue(`#${tag}`)).join(" ")}`);
+      console.log(`Tags: ${metadata.tags.map((tag) => chalk.blue(`#${tag}`)).join(" ")}`);
     }
 
     console.log(chalk.bold("\nStatistics:"));
@@ -596,7 +613,7 @@ export class SessionCommand extends BaseCommand {
     console.log(`  lastActivity: ${new Date(metadata.lastActivity).toISOString()}`);
     console.log(`  workingDirectory: "${metadata.workingDirectory}"`);
     console.log(`  activeProfile: "${metadata.activeProfile}"`);
-    
+
     if (metadata.tags.length > 0) {
       console.log("  tags:");
       for (const tag of metadata.tags) {
