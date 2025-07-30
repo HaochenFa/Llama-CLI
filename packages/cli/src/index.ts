@@ -9,6 +9,7 @@ import { Command } from "commander";
 import { ChatCommand } from "./commands/chat.js";
 import { ConfigCommand } from "./commands/config.js";
 import { GetCommand } from "./commands/get.js";
+import { SessionCommand } from "./commands/session.js";
 import { ConfigStore } from "@llamacli/core";
 import { getErrorMessage } from "./utils/error-utils.js";
 
@@ -101,6 +102,10 @@ configCmd
     const configCommand = new ConfigCommand(configStore);
     await configCommand.removeProfile(name);
   });
+
+// Session management commands
+const sessionCommand = new SessionCommand();
+program.addCommand(sessionCommand.getCommand());
 
 // Error handling
 process.on("uncaughtException", (error) => {
