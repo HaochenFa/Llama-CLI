@@ -101,7 +101,16 @@ export class ConfigCommand {
           type: "list",
           name: "type",
           message: "Select LLM type:",
-          choices: ["ollama", "openai", "claude", "vllm"],
+          choices: [
+            { name: "Ollama (Local)", value: "ollama" },
+            { name: "OpenAI (GPT)", value: "openai" },
+            { name: "Claude (Anthropic)", value: "claude" },
+            { name: "Gemini (Google)", value: "gemini" },
+            { name: "OpenAI Compatible (LM Studio, etc.)", value: "openai-compatible" },
+            { name: "LM Studio", value: "lmstudio" },
+            { name: "Oobabooga", value: "oobabooga" },
+            { name: "vLLM", value: "vllm" },
+          ],
           when: !options.type,
         },
         {
@@ -114,6 +123,17 @@ export class ConfigCommand {
                 return "http://localhost:11434";
               case "openai":
                 return "https://api.openai.com/v1";
+              case "claude":
+                return "https://api.anthropic.com/v1";
+              case "gemini":
+                return "https://generativelanguage.googleapis.com/v1beta";
+              case "openai-compatible":
+              case "lmstudio":
+                return "http://localhost:1234/v1";
+              case "oobabooga":
+                return "http://localhost:5000/v1";
+              case "vllm":
+                return "http://localhost:8000/v1";
               default:
                 return "";
             }
@@ -130,6 +150,15 @@ export class ConfigCommand {
                 return "llama3.2";
               case "openai":
                 return "gpt-4";
+              case "claude":
+                return "claude-3-sonnet-20240229";
+              case "gemini":
+                return "gemini-1.5-pro";
+              case "openai-compatible":
+              case "lmstudio":
+              case "oobabooga":
+              case "vllm":
+                return "local-model";
               default:
                 return "";
             }
