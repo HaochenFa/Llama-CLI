@@ -19,19 +19,13 @@
 - **[开发者指南](DEVELOPER_GUIDE.md)** - 贡献代码和扩展开发
 - **[API 参考](API_REFERENCE.md)** - 详细的 API 文档和示例
 
-### 🎯 核心功能文档
-
-- **[增强 Agentic 系统](ENHANCED_AGENTIC_SYSTEM.md)** - 智能任务分解和动态执行规划
-- **[高级搜索和代码分析](ADVANCED_SEARCH_AND_ANALYSIS.md)** - AST 解析、语义搜索和跨文件引用分析
-- **[网络工具验证](NETWORK_TOOLS_VALIDATION.md)** - 网络功能验证和安全特性
-
 ### 📋 项目信息
 
 - **[项目路线图](ROADMAP.md)** - 功能规划和开发进度
 
 ## 🎯 快速导航
 
-### 我想...
+### 我想
 
 #### 🏃‍♂️ 快速开始使用
 
