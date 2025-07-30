@@ -22,6 +22,8 @@
 ### 📋 项目信息
 
 - **[项目路线图](ROADMAP.md)** - 功能规划和开发进度
+- **[项目评估报告](PROJECT_ASSESSMENT.md)** - 当前进展和质量评估
+- **[与 Gemini CLI 对比](COMPARISON_WITH_GEMINI_CLI.md)** - 竞争分析和差异化定位
 
 ## 🎯 快速导航
 
