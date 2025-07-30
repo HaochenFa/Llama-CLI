@@ -11,7 +11,6 @@ import {
   MCPImageContent,
 } from "../types/mcp.js";
 import { ToolScheduler } from "./tool-scheduler.js";
-// import { ContextManager } from './context-manager.js'; // TODO: Implement context manager
 import { ContextManager } from "./index.js";
 import { BaseTool, ToolExecutor, ToolDiscovery } from "../tools/index.js";
 import { LLMAdapter } from "../types/adapters.js";
