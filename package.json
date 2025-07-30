@@ -2,6 +2,7 @@
   "name": "llamacli",
   "version": "1.0.0",
   "description": "AI-powered command line development partner",
+  "type": "module",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -18,7 +19,9 @@
     "lint": "eslint packages/*/src/**/*.ts",
     "format": "prettier --write packages/*/src/**/*.ts",
     "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "perf": "node scripts/performance-analysis.js",
+    "perf:build": "npm run build && npm run perf"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

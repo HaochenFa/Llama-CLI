@@ -1,6 +1,10 @@
-const esbuild = require("esbuild");
-const path = require("path");
-const fs = require("fs");
+import esbuild from "esbuild";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const buildPackage = async (packageName, entryPoint, outfile, options = {}) => {
   const config = {
@@ -69,8 +73,8 @@ if (watchMode) {
   // Watch mode implementation would go here
   // For now, just build once
   buildAll().catch(console.error);
-} else if (require.main === module) {
+} else if (import.meta.url === `file://${process.argv[1]}`) {
   buildAll().catch(console.error);
 }
 
-module.exports = { buildPackage, buildAll };
+export { buildPackage, buildAll };
