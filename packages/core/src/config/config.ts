@@ -180,6 +180,58 @@ export const DEFAULT_CONFIG: LlamaCLIConfig = {
           timeout: 5000,
         },
       },
+      openai: {
+        type: "openai",
+        baseUrl: "https://api.openai.com/v1",
+        timeout: 30000,
+        retries: 3,
+        headers: {},
+        models: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+        healthCheck: {
+          enabled: true,
+          interval: 60000,
+          timeout: 5000,
+        },
+      },
+      claude: {
+        type: "claude",
+        baseUrl: "https://api.anthropic.com/v1",
+        timeout: 30000,
+        retries: 3,
+        headers: {},
+        models: ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+        healthCheck: {
+          enabled: true,
+          interval: 60000,
+          timeout: 5000,
+        },
+      },
+      gemini: {
+        type: "gemini",
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+        timeout: 30000,
+        retries: 3,
+        headers: {},
+        models: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"],
+        healthCheck: {
+          enabled: true,
+          interval: 60000,
+          timeout: 5000,
+        },
+      },
+      "openai-compatible": {
+        type: "openai-compatible",
+        baseUrl: "http://localhost:1234/v1",
+        timeout: 30000,
+        retries: 3,
+        headers: {},
+        models: ["local-model"],
+        healthCheck: {
+          enabled: true,
+          interval: 60000,
+          timeout: 5000,
+        },
+      },
     },
     profiles: [
       {
