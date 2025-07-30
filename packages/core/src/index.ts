@@ -14,6 +14,7 @@
 export * from "./types/context.js";
 export * from "./types/adapters.js";
 export * from "./types/mcp.js";
+export * from "./types/session.js";
 
 // Configuration
 export {
@@ -75,6 +76,9 @@ export function createDefaultContextWithParams(
 
 // MCP Server
 export { BuiltinMCPServer, createMCPServer } from "./mcp/server.js";
+
+// Session Management
+export * from "./session/index.js";
 
 // Utils
 export * from "./utils/index.js";

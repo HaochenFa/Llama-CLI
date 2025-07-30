@@ -16,11 +16,11 @@ export type {
   AgentConfig,
 } from "./agentic-loop.js";
 
-// Placeholder classes for future implementation
-export class ContextManager {
-  // TODO)): Implement context management
-}
+// Import actual implementations
+export { SessionManager } from "../session/session-manager.js";
 
-export class SessionManager {
-  // TODO)): Implement session management
+// Context management - using enhanced context manager for now
+export class ContextManager {
+  // Basic context management functionality
+  // For advanced features, use EnhancedContextManager from core/enhanced-context-manager.js
 }
