@@ -46,22 +46,8 @@ export type {
  */
 import { globalToolRegistry } from "../base.js";
 
-// Auto-register analysis tools
-const analysisTools = [
-  new ASTAnalyzerTool(),
-  new CrossReferenceAnalyzerTool(),
-  new SemanticSearchTool(),
-  new CodeIndexerTool(),
-];
-
-// Register tools if registry is available
-if (globalToolRegistry) {
-  analysisTools.forEach((tool) => {
-    globalToolRegistry.register(tool);
-  });
-}
-
-export { analysisTools };
+// Analysis tools are available as individual exports
+// Tools can be instantiated and registered manually as needed
 
 /**
  * Analysis tools configuration
