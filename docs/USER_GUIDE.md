@@ -1,437 +1,260 @@
 # LlamaCLI User Guide
 
-**Version**: 0.9.0  
+**Version**: 1.0.0
 **Last Updated**: 2025-08-01
 
-## 🚀 Quick Start
+> 💡 **New to LlamaCLI?** Check out our [Quick Start Guide](../QUICK_START.md) for installation and basic setup.
 
-### Installation
+## 📋 Overview
+
+This guide covers advanced features and usage patterns for LlamaCLI. For basic installation and setup, see the Quick Start Guide.
+
+## 🖥️ Advanced Interactive Features
+
+### Keyboard Shortcuts
+
+| Shortcut | Action                   |
+| -------- | ------------------------ |
+| `Ctrl+L` | Clear screen             |
+| `Ctrl+D` | Exit application         |
+| `Tab`    | Auto-completion          |
+| `↑/↓`    | Navigate command history |
+| `Ctrl+R` | Search command history   |
+
+### Command Reference
+
+| Command                  | Description                 | Example                           |
+| ------------------------ | --------------------------- | --------------------------------- |
+| `help`                   | Show help information       | `help`                            |
+| `chat [message]`         | Start/continue conversation | `chat "Review this code"`         |
+| `get <query>`            | Quick one-off questions     | `get "Python list comprehension"` |
+| `config list/use`        | Manage LLM profiles         | `config use my-ollama`            |
+| `theme <name>`           | Change visual theme         | `theme dracula`                   |
+| `session list/save/load` | Manage sessions             | `session save my-project`         |
+| `preferences list/set`   | Manage settings             | `preferences set cli.theme light` |
+
+## ⚙️ Advanced Configuration
+
+### LLM Provider Support
+
+| Provider              | Models                                                                    | Type        | Configuration             |
+| --------------------- | ------------------------------------------------------------------------- | ----------- | ------------------------- |
+| **Ollama**            | llama3.2, codellama, etc.                                                 | Local       | Endpoint URL              |
+| **OpenAI**            | gpt-4, gpt-4-turbo, gpt-3.5-turbo                                         | Cloud       | API Key                   |
+| **Claude**            | claude-3-opus-20240229, claude-3-sonnet-20240229, claude-3-haiku-20240307 | Cloud       | API Key                   |
+| **Gemini**            | gemini-1.5-pro, gemini-1.5-flash, gemini-1.0-pro                          | Cloud       | API Key                   |
+| **OpenAI-Compatible** | local-model, custom models                                                | Local/Cloud | Custom endpoint + API Key |
+
+### Quick Profile Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/HaochenFa/Llama-CLI.git
-cd Llama-CLI
+# Interactive profile creation
+llamacli config add <profile-name>
 
-# Install dependencies and build
-npm install
-npm run build
-
-# Create global link (optional)
-npm link packages/cli
+# Common configurations
+llamacli config add ollama-local    # Local Ollama setup
+llamacli config add openai-gpt4     # OpenAI GPT-4
+llamacli config add claude-sonnet   # Claude Sonnet
 ```
 
-### First Time Setup
+## 🎨 Customization & Preferences
 
-1. **Start LlamaCLI**:
+### Built-in Themes
 
-   ```bash
-   llamacli
-   ```
-
-2. **Configure your first LLM profile**:
-
-   ```bash
-   llamacli config add my-ollama
-   ```
-
-   Follow the interactive setup to configure your LLM connection.
-
-3. **Start chatting**:
-   ```bash
-   llamacli chat "Hello, how can you help me with development?"
-   ```
-
-## 🖥️ Interactive Mode
-
-LlamaCLI automatically starts in interactive mode, providing a modern CLI experience with enhanced features.
-
-### Starting Interactive Mode
+| Theme     | Description                  | Best For            |
+| --------- | ---------------------------- | ------------------- |
+| `default` | Dark theme with blue accents | General use         |
+| `light`   | Clean light theme            | Bright environments |
+| `dracula` | Purple accents               | Popular dark theme  |
+| `github`  | GitHub-inspired              | Familiar interface  |
+| `monokai` | Vibrant colors               | Code-focused work   |
 
 ```bash
-# Start interactive mode (default)
-llamacli
-
-# Or explicitly
-llamacli --interactive
+# Quick theme switching
+llamacli preferences set cli.theme <theme-name>
 ```
 
-### Interactive Features
+### Key Preference Categories
 
-- **🔤 Auto-completion**: Press `Tab` for intelligent command suggestions
-- **🎨 Syntax Highlighting**: Code is automatically highlighted in multiple languages
-- **📚 Command History**: Use `↑/↓` arrows to navigate command history
-- **🌈 Themes**: Switch between 5 built-in themes
-- **⌨️ Keyboard Shortcuts**:
-  - `Ctrl+L`: Clear screen
-  - `Ctrl+D`: Exit application
-  - `Tab`: Auto-completion
-  - `↑/↓`: Navigate command history
-
-### Available Commands
-
-In interactive mode, you can use these commands:
-
-- `help` - Show help information
-- `chat [message]` - Start or continue chat conversation
-- `get <query>` - Quick one-off questions
-- `config list` - Show LLM profiles
-- `config use <profile>` - Switch active profile
-- `theme <name>` - Change visual theme
-- `preferences list` - Show all preferences
-- `session list` - Show saved sessions
-- `clear` - Clear the screen
-- `exit` / `quit` - Exit the application
-
-## ⚙️ Configuration
-
-### LLM Profiles
-
-LlamaCLI supports multiple LLM providers through profiles:
+#### Essential Settings
 
 ```bash
-# Add new profile
-llamacli config add my-profile
-
-# List all profiles
-llamacli config list
-
-# Switch active profile
-llamacli config use my-profile
-
-# Remove profile
-llamacli config remove my-profile
-```
-
-### Supported LLM Providers
-
-#### Local Models
-
-- **Ollama**: Local model hosting (llama2, codellama, etc.)
-
-#### Cloud Models
-
-- **OpenAI**: GPT-3.5, GPT-4, GPT-4 Turbo
-- **Anthropic Claude**: Claude-3 Haiku, Sonnet, Opus
-- **Google Gemini**: Gemini 1.5 Pro, Flash
-
-#### OpenAI-Compatible
-
-- **Local Services**: LM Studio, vLLM, FastChat
-- **Cloud Services**: Any OpenAI-compatible API
-
-### Profile Configuration Examples
-
-#### Ollama Profile
-
-```bash
-llamacli config add local-llama
-# Select: ollama
-# Model: llama2
-# Endpoint: http://localhost:11434 (default)
-```
-
-#### OpenAI Profile
-
-```bash
-llamacli config add gpt4
-# Select: openai
-# Model: gpt-4
-# API Key: [your-api-key]
-```
-
-## 🎨 Customization
-
-### Themes
-
-LlamaCLI includes 5 built-in themes:
-
-```bash
-# Change theme
+# Core CLI behavior
+llamacli preferences set cli.autoComplete true
+llamacli preferences set cli.syntaxHighlighting true
 llamacli preferences set cli.theme dracula
 
-# Available themes:
-# - default (dark theme with blue accents)
-# - light (clean light theme)
-# - dracula (purple accents)
-# - github (GitHub-inspired)
-# - monokai (vibrant colors)
+# Performance tuning
+llamacli preferences set performance.maxMemory 100MB
+llamacli preferences set performance.timeout 30s
 ```
 
-### User Preferences
-
-Customize your experience with 50+ configurable options:
+#### Backup & Restore
 
 ```bash
-# List all preferences
-llamacli preferences list
-
-# View specific category
-llamacli preferences list --section cli
-
-# Get specific preference
-llamacli preferences get cli.theme
-
-# Set preference
-llamacli preferences set cli.autoComplete true
-
-# Reset preferences
-llamacli preferences reset --section cli
-
-# Export settings for backup
-llamacli preferences export my-settings.json
+# Export all settings
+llamacli preferences export backup-$(date +%Y%m%d).json
 
 # Import settings
-llamacli preferences import my-settings.json
+llamacli preferences import backup.json
+
+# Reset to defaults
+llamacli preferences reset --confirm
 ```
 
-### Preference Categories
+## 💬 Advanced Chat & Session Management
 
-#### CLI Settings
-
-- Theme and color scheme
-- Custom prompt text
-- Auto-completion behavior
-- Syntax highlighting
-- Welcome messages and tips
-
-#### Editor Settings
-
-- Default text editor
-- Tab size and indentation
-- Line numbers and word wrap
-- Font family and size
-
-#### Display Settings
-
-- Maximum display width
-- Date and time formats
-- Code block styling
-- Table formatting
-
-#### Behavior Settings
-
-- Exit and delete confirmations
-- Auto-save functionality
-- Notification preferences
-- Telemetry settings
-
-#### Keyboard Shortcuts
-
-- Customizable key bindings
-- Screen clearing shortcuts
-- Theme toggle keys
-
-#### Command History
-
-- History persistence
-- Maximum entries
-- Pattern exclusions
-- Search functionality
-
-## 💬 Chat Features
-
-### Basic Chat
+### Context-Aware Conversations
 
 ```bash
-# Start a conversation
-llamacli chat "Explain how async/await works in JavaScript"
-
-# Continue the conversation
-llamacli chat "Can you show me a practical example?"
-
 # Include file context
 llamacli chat "Review this code" --file src/index.ts
+
+# Multi-file analysis
+llamacli chat "Compare these implementations" --file old.js --file new.js
+
+# Directory context
+llamacli chat "Analyze project structure" --directory src/
 ```
 
-### Quick Queries
+### Session Workflows
 
 ```bash
-# One-off questions
-llamacli get "What's the current time in Tokyo?"
-llamacli get "How to reverse a string in Python?"
-llamacli get "Best practices for React hooks"
+# Project-based sessions
+llamacli session save "feature-auth-$(date +%Y%m%d)"
+llamacli session load feature-auth-20250801
+
+# Session templates
+llamacli session export template-code-review.json
+llamacli session import template-code-review.json
+
+# Batch operations
+llamacli session list --filter "project:auth"
+llamacli session cleanup --older-than 30d
 ```
 
-### Session Management
+## 🛠️ Advanced Tool Integration
+
+### Intelligent File Operations
 
 ```bash
-# List all sessions
-llamacli session list
+# Smart file analysis
+llamacli chat "Analyze package.json and suggest dependency updates"
+llamacli chat "Find security vulnerabilities in dependencies"
+llamacli chat "Generate TypeScript definitions for this JavaScript file"
 
-# Save current conversation
-llamacli session save my-project-discussion
-
-# Load previous session
-llamacli session load my-project-discussion
-
-# Export session for sharing
-llamacli session export my-session.json
-
-# Import session
-llamacli session import shared-session.json
-
-# Delete old sessions
-llamacli session delete old-session
+# Batch file operations
+llamacli chat "Convert all .js files in src/ to TypeScript"
+llamacli chat "Add JSDoc comments to all functions in utils/"
 ```
 
-## 🛠️ Advanced Features
-
-### File Operations
-
-LlamaCLI can help with file operations through its tool system:
+### Development Workflows
 
 ```bash
-llamacli chat "Read the package.json file and explain the dependencies"
-llamacli chat "Create a new README.md file for this project"
-llamacli chat "Find all TypeScript files in the src directory"
+# Code review automation
+llamacli chat "Review last commit for code quality issues"
+llamacli chat "Generate unit tests for changed files"
+llamacli chat "Check if new code follows project conventions"
+
+# Project maintenance
+llamacli chat "Update all outdated dependencies safely"
+llamacli chat "Generate changelog from recent commits"
+llamacli chat "Optimize build configuration for production"
 ```
 
-### Code Analysis
+## 🚨 Smart Error Recovery
 
-```bash
-llamacli chat "Analyze the code in src/index.ts and suggest improvements"
-llamacli chat "Find all TODO comments in the project"
-llamacli chat "Check for potential security issues in this code"
-```
+### Intelligent Error Classification
 
-### Shell Integration
+LlamaCLI automatically categorizes errors and provides specific solutions:
 
-```bash
-llamacli chat "Run npm test and explain the results"
-llamacli chat "Check the git status and suggest next steps"
-llamacli chat "What files have changed since the last commit?"
-```
-
-## 🚨 Error Handling
-
-LlamaCLI provides intelligent error handling with helpful recovery suggestions:
-
-### Error Types
-
-- **Network Issues**: Connection troubleshooting
-- **Authentication**: API key validation and setup
-- **Configuration**: Profile setup and validation
-- **File Operations**: Permission and path guidance
-- **Validation**: Input format and syntax help
-
-### Error Features
-
-- Clear, user-friendly error messages
-- Priority-based recovery suggestions
-- Specific commands to fix issues
-- Interactive error recovery options
-- Debug information for developers
-
-## 📊 Performance
-
-LlamaCLI is optimized for excellent performance:
-
-- **Startup Time**: <350ms (65% better than target)
-- **Memory Usage**: <30MB (85% better than target)
-- **Response Time**: Near-instantaneous for most operations
-- **Auto-completion**: <10ms response time
-- **Theme Switching**: <5ms transition time
-
-## 🔒 Privacy & Security
-
-### Data Protection
-
-- **Local First**: All data stored locally by default
-- **No Telemetry**: Telemetry disabled by default (user-controlled)
-- **Secure Storage**: Encrypted credential storage
-- **Pattern Filtering**: Automatic exclusion of sensitive data from history
-
-### Permission System
-
-- Granular permission controls
-- Tool execution confirmations
-- Session-level permission management
-- Audit trail for security-sensitive operations
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-1. **Command not found**
-   - Ensure LlamaCLI is properly installed: `npm run build`
-   - Check global link: `npm link packages/cli`
-
-2. **API connection errors**
-   - Verify API keys: `llamacli config list`
-   - Check network connection
-   - Confirm service endpoints
-
-3. **Slow responses**
-   - Check LLM service status
-   - Verify network connectivity
-   - Try different model/profile
-
-4. **Theme or display issues**
-   - Reset CLI preferences: `llamacli preferences reset --section cli`
-   - Check terminal compatibility
+| Error Type         | Auto-Recovery      | User Action        |
+| ------------------ | ------------------ | ------------------ |
+| Network Issues     | Retry with backoff | Check connection   |
+| API Authentication | Prompt for new key | Update credentials |
+| Configuration      | Suggest fixes      | Run config wizard  |
+| File Permissions   | Alternative paths  | Check file access  |
 
 ### Debug Mode
 
-Enable detailed debugging information:
-
 ```bash
+# Enable detailed debugging
 LLAMACLI_DEBUG=1 llamacli your-command
+
+# Performance profiling
+llamacli --profile your-command
 ```
+
+## 📊 Performance & Security
+
+### Performance Metrics
+
+- **Startup**: <350ms (65% faster than target)
+- **Memory**: <30MB (85% better than target)
+- **Auto-completion**: <10ms response time
+- **Theme switching**: <5ms transition time
+
+### Security Features
+
+- **Local-first**: Data stays on your device
+- **Encrypted storage**: Secure credential management
+- **Permission system**: Granular tool execution controls
+- **Audit trail**: Track security-sensitive operations
+
+## 🆘 Quick Troubleshooting
+
+| Issue             | Quick Fix            | Command                                    |
+| ----------------- | -------------------- | ------------------------------------------ |
+| Command not found | Rebuild project      | `npm run build && npm link packages/cli`   |
+| API errors        | Check configuration  | `llamacli config list`                     |
+| Slow responses    | Switch model/profile | `llamacli config use <faster-profile>`     |
+| Display issues    | Reset preferences    | `llamacli preferences reset --section cli` |
 
 ### Getting Help
 
-- Use `llamacli --help` for command-line help
-- Use `help` command in interactive mode
-- Check error messages for specific guidance
-- Review the [API Reference](API_REFERENCE.md) for technical details
+- `llamacli --help` - Command-line help
+- `help` - Interactive mode help
+- [API Reference](API_REFERENCE.md) - Technical details
+- [Developer Guide](DEVELOPER_GUIDE.md) - Contributing
 
-## 📚 Example Workflows
+## 📚 Professional Workflows
 
-### Daily Development
+### Code Review Workflow
 
 ```bash
-# Start your development session
-llamacli
-
-# Check project status
-> chat "Analyze the current project structure and suggest today's priorities"
-
-# Code review
-> chat "Review the changes in the last commit"
-
-# Documentation
-> chat "Update the README with the new features we added"
-
-# Testing
-> chat "Run the test suite and explain any failures"
+# Automated code review
+llamacli session save "review-$(git rev-parse --short HEAD)"
+llamacli chat "Review last commit for security, performance, and maintainability"
+llamacli chat "Generate test cases for new functions"
+llamacli chat "Check if code follows project style guide"
 ```
 
-### Learning New Technologies
+### Feature Development Workflow
 
 ```bash
-# Learn concepts
-> get "Explain React Server Components with examples"
+# Feature planning
+llamacli session save "feature-auth-system"
+llamacli chat "Design authentication system architecture"
+llamacli chat "Create implementation checklist"
+llamacli chat "Identify potential security considerations"
 
-# Practice coding
-> chat "Help me build a simple Next.js app with TypeScript"
-
-# Debug issues
-> chat "I'm getting this error: [paste error]. How do I fix it?"
+# Implementation support
+llamacli chat "Generate boilerplate code for JWT authentication"
+llamacli chat "Review implementation against security best practices"
 ```
 
-### Code Refactoring
+### Learning & Documentation
 
 ```bash
-# Analyze code quality
-> chat "Analyze this function and suggest improvements" --file src/utils.ts
+# Technology exploration
+llamacli get "Compare React Server Components vs Client Components"
+llamacli chat "Show me production-ready Next.js 14 patterns"
 
-# Refactor suggestions
-> chat "How can I make this code more maintainable?"
-
-# Performance optimization
-> chat "Are there any performance issues in this code?"
+# Documentation generation
+llamacli chat "Generate API documentation from TypeScript interfaces"
+llamacli chat "Create user guide from code comments"
 ```
 
 ---
 
-For advanced usage, API details, and development information, see the [Developer Guide](DEVELOPER_GUIDE.md) and [API Reference](API_REFERENCE.md).
+**Next Steps**: [Developer Guide](DEVELOPER_GUIDE.md) • [API Reference](API_REFERENCE.md) • [Examples](examples/)

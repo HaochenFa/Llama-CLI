@@ -1,8 +1,44 @@
-# LlamaCLI Configuration Examples
+# LlamaCLI Examples & Guides
 
-This directory contains comprehensive configuration examples and guides for LlamaCLI.
+Practical examples and configuration guides to help you get the most out of LlamaCLI.
 
-## 📚 Available Examples
+## 📋 Example Categories
+
+### 🔧 Configuration & Setup
+
+| Guide                                                       | Description                             | Difficulty   |
+| ----------------------------------------------------------- | --------------------------------------- | ------------ |
+| **[Adapter Configurations](adapter-configurations.md)**     | Complete LLM provider setup guide       | Beginner     |
+| **[User Preferences](user-preferences.md)**                 | Customizing CLI behavior and appearance | Intermediate |
+| **[Themes and Customization](themes-and-customization.md)** | Visual themes and UI customization      | Beginner     |
+
+### 💬 Usage Patterns
+
+| Guide                                           | Description                          | Difficulty   |
+| ----------------------------------------------- | ------------------------------------ | ------------ |
+| **[Session Management](session-management.md)** | Managing conversations and workflows | Intermediate |
+
+## 🚀 Quick Examples
+
+### Essential Commands
+
+```bash
+# Interactive mode (recommended for beginners)
+llamacli
+
+# Quick one-off questions
+llamacli get "Best practices for React hooks"
+
+# Chat with file context
+llamacli chat "Review this code for security issues" --file app.js
+
+# Configuration management
+llamacli config list                    # View all profiles
+llamacli config add my-gpt4            # Add new profile
+llamacli config use my-gpt4             # Switch profile
+```
+
+## 📚 Detailed Examples
 
 ### 🔧 [Adapter Configurations](adapter-configurations.md)
 

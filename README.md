@@ -101,7 +101,7 @@ llamacli --help
 
 ### 开发进度：Phase 1 完成 ✅
 
-**LlamaCLI v0.9.0 - 用户体验与性能优化阶段已完成**
+**LlamaCLI v1.0.0 - 用户体验与性能优化阶段已完成**
 
 ### ✅ 已实现 (Phase 1)
 

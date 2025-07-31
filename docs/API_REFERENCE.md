@@ -1,6 +1,6 @@
 # LlamaCLI API Reference
 
-**Version**: 0.9.0  
+**Version**: 1.0.0
 **Last Updated**: 2025-08-01
 
 ## Overview
@@ -76,7 +76,7 @@ import { OllamaAdapter, OpenAIAdapter } from "@llamacli/core";
 const ollama = new OllamaAdapter({
   type: "ollama",
   baseUrl: "http://localhost:11434",
-  model: "llama2",
+  model: "llama3.2",
   timeout: 30000,
 });
 
