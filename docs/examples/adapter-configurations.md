@@ -1,170 +1,212 @@
-# LLM 适配器配置指南
+# LLM Adapter Configuration Guide
 
-LlamaCLI 支持多种 LLM 提供商，包括云端服务和本地模型。
+LlamaCLI supports multiple LLM providers, including cloud services and local models.
 
-## 🌐 支持的适配器
+## 🌐 Supported Adapters
 
-### 云端服务
-- **OpenAI** - GPT-4, GPT-3.5 等模型
-- **Anthropic** - Claude 3 系列模型
-- **Google** - Gemini 1.5 系列模型
-- **Azure OpenAI** - Azure 托管的 OpenAI 模型
-- **AWS Bedrock** - Amazon 托管的多种模型
+### Cloud Services
 
-### 本地服务
-- **Ollama** - 本地运行的开源模型
-- **LM Studio** - 本地模型管理和 API 服务
-- **LocalAI** - 自托管的 OpenAI 兼容 API
-- **vLLM** - 高性能推理服务器
+- **OpenAI** - GPT-4, GPT-3.5, and other models
+- **Anthropic** - Claude 3 series models
+- **Google** - Gemini 1.5 series models
 
-## ⚡ 快速配置
+### Local Services
 
-### 云端服务配置
+- **Ollama** - Local open-source models
+- **OpenAI-Compatible** - LM Studio, vLLM, LocalAI, and other OpenAI-compatible services
+
+## ⚡ Quick Configuration
+
+### Cloud Service Configuration
 
 #### OpenAI
+
 ```bash
-llamacli config add openai-gpt4 \
-  --type openai \
-  --model gpt-4 \
-  --api-key your-openai-api-key
+llamacli config add openai-gpt4
+# Follow the interactive prompts:
+# - Adapter type: openai
+# - Model: gpt-4
+# - API Key: your-openai-api-key
+# - Endpoint: https://api.openai.com/v1 (default)
 ```
 
 #### Anthropic Claude
+
 ```bash
-llamacli config add claude-sonnet \
-  --type claude \
-  --model claude-3-5-sonnet-20241022 \
-  --api-key your-anthropic-api-key
+llamacli config add claude-sonnet
+# Follow the interactive prompts:
+# - Adapter type: claude
+# - Model: claude-3-5-sonnet-20241022
+# - API Key: your-anthropic-api-key
 ```
 
 #### Google Gemini
+
 ```bash
-llamacli config add gemini-pro \
-  --type gemini \
-  --model gemini-1.5-pro \
-  --api-key your-google-api-key
+llamacli config add gemini-pro
+# Follow the interactive prompts:
+# - Adapter type: gemini
+# - Model: gemini-1.5-pro
+# - API Key: your-google-api-key
 ```
 
-### 本地服务配置
+### Local Service Configuration
 
 #### Ollama
+
 ```bash
-llamacli config add ollama-llama \
-  --type ollama \
-  --endpoint http://localhost:11434 \
-  --model llama3.1:8b
+llamacli config add ollama-llama
+# Follow the interactive prompts:
+# - Adapter type: ollama
+# - Model: llama3.1:8b
+# - Endpoint: http://localhost:11434 (default)
 ```
 
-#### LM Studio
+#### OpenAI-Compatible Services
+
 ```bash
-llamacli config add lmstudio-local \
-  --type openai-compatible \
-  --endpoint http://localhost:1234/v1 \
-  --model local-model
+# LM Studio
+llamacli config add lmstudio-local
+# - Adapter type: openai-compatible
+# - Endpoint: http://localhost:1234/v1
+# - Model: local-model
+
+# vLLM
+llamacli config add vllm-server
+# - Adapter type: openai-compatible
+# - Endpoint: http://localhost:8000/v1
+# - Model: your-model-name
 ```
 
-## 🔧 配置文件方式
+## 🔧 Configuration File Method
 
-您也可以直接编辑配置文件 `~/.llamacli/config.json`：
+You can also directly edit the configuration file `~/.llamacli/config.json`:
 
 ```json
 {
-  "adapters": {
+  "profiles": {
     "openai-gpt4": {
-      "type": "openai",
+      "adapter": "openai",
       "endpoint": "https://api.openai.com/v1",
       "model": "gpt-4",
-      "apiKey": "your-openai-api-key"
+      "apiKey": "your-openai-api-key",
+      "timeout": 30000,
+      "retries": 3
     },
     "claude-sonnet": {
-      "type": "claude",
-      "endpoint": "https://api.anthropic.com/v1",
+      "adapter": "claude",
       "model": "claude-3-5-sonnet-20241022",
-      "apiKey": "your-anthropic-api-key"
+      "apiKey": "your-anthropic-api-key",
+      "timeout": 30000
     },
     "ollama-llama": {
-      "type": "ollama",
+      "adapter": "ollama",
       "endpoint": "http://localhost:11434",
-      "model": "llama3.1:8b"
+      "model": "llama3.1:8b",
+      "timeout": 60000
+    },
+    "gemini-pro": {
+      "adapter": "gemini",
+      "model": "gemini-1.5-pro",
+      "apiKey": "your-google-api-key"
     }
   },
-  "defaultAdapter": "openai-gpt4"
+  "defaultProfile": "openai-gpt4"
 }
 ```
 
-## 📋 常用命令
+## 📋 Common Commands
 
-### 查看配置
+### View Configuration
+
 ```bash
-# 列出所有适配器
+# List all profiles
 llamacli config list
 
-# 查看特定适配器
+# Show specific profile details
 llamacli config show openai-gpt4
 
-# 测试适配器连接
+# Test profile connection
 llamacli config test claude-sonnet
 ```
 
-### 管理配置
+### Manage Configuration
+
 ```bash
-# 设置默认适配器
-llamacli config set-default ollama-llama
+# Set default profile
+llamacli config use ollama-llama
 
-# 删除适配器
-llamacli config remove old-adapter
+# Remove profile
+llamacli config remove old-profile
 
-# 更新适配器
-llamacli config update openai-gpt4 --model gpt-4-turbo
+# Switch between profiles
+llamacli config use gemini-pro
 ```
 
-## 🔍 故障排除
+## 🔍 Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **API 密钥错误**
-   ```
+1. **API Key Error**
+
+   ```text
    Error: OpenAI API key is required
    ```
-   解决方案：检查 API 密钥是否正确设置
 
-2. **网络连接问题**
-   ```
-   Error: Network error
-   ```
-   解决方案：检查网络连接和端点 URL
+   **Solution**: Check that your API key is correctly set in the profile configuration.
 
-3. **模型不可用**
+2. **Network Connection Issues**
+
+   ```text
+   Error: Network error - Connection timeout
    ```
+
+   **Solution**: Check your network connection and endpoint URL.
+
+3. **Model Not Available**
+
+   ```text
    Error: Model not found
    ```
-   解决方案：检查模型名称是否正确
 
-### 验证配置
+   **Solution**: Verify that the model name is correct and available for your account.
 
-使用以下命令验证配置是否正确：
+4. **Local Service Not Running**
+
+   ```text
+   Error: Connection refused
+   ```
+
+   **Solution**: Ensure your local service (Ollama, LM Studio) is running and accessible.
+
+### Validate Configuration
+
+Use the following command to verify your configuration:
 
 ```bash
-llamacli config test your-adapter-name
+llamacli config test your-profile-name
 ```
 
-## 🎯 推荐配置
+## 🎯 Recommended Configurations
 
-### 开发环境
-- **主要**: Ollama (本地快速测试)
-- **备用**: OpenAI GPT-4 (复杂任务)
+### Development Environment
 
-### 生产环境
-- **主要**: Claude 3.5 Sonnet (平衡性能和成本)
-- **备用**: GPT-4 (特殊需求)
+- **Primary**: Ollama (local, fast testing)
+- **Backup**: OpenAI GPT-4 (complex tasks)
 
-### 成本优化
-- **日常使用**: GPT-3.5 Turbo
-- **复杂任务**: Claude 3 Haiku
-- **本地处理**: Ollama + Llama 3.1
+### Production Environment
 
-## 📚 更多信息
+- **Primary**: Claude 3.5 Sonnet (balanced performance and cost)
+- **Backup**: GPT-4 (special requirements)
 
-- [用户指南](../USER_GUIDE.md) - 完整使用指南
-- [开发者指南](../DEVELOPER_GUIDE.md) - 开发和扩展
-- [API 参考](../API_REFERENCE.md) - 详细 API 文档
+### Cost Optimization
+
+- **Daily Use**: GPT-3.5 Turbo
+- **Complex Tasks**: Claude 3 Haiku
+- **Local Processing**: Ollama + Llama 3.1
+
+## 📚 More Information
+
+- [User Guide](../USER_GUIDE.md) - Complete usage guide
+- [Developer Guide](../DEVELOPER_GUIDE.md) - Development and extension
+- [API Reference](../API_REFERENCE.md) - Detailed API documentation
