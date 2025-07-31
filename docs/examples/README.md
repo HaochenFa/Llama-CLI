@@ -5,7 +5,9 @@ This directory contains comprehensive configuration examples and guides for Llam
 ## 📚 Available Examples
 
 ### 🔧 [Adapter Configurations](adapter-configurations.md)
+
 Complete guide for configuring LLM adapters including:
+
 - **Cloud Services**: OpenAI, Anthropic Claude, Google Gemini
 - **Local Services**: Ollama, OpenAI-compatible services
 - **Configuration Methods**: Interactive setup and JSON configuration
@@ -13,7 +15,9 @@ Complete guide for configuring LLM adapters including:
 - **Recommended Setups**: Development, production, and cost-optimized configurations
 
 ### ⚙️ [User Preferences](user-preferences.md)
+
 Comprehensive user preferences configuration covering:
+
 - **CLI Settings**: Themes, prompts, auto-completion, syntax highlighting
 - **Editor Settings**: Default editor, tab size, line numbers, fonts
 - **Display Settings**: Layout, code blocks, tables, visual elements
@@ -22,7 +26,9 @@ Comprehensive user preferences configuration covering:
 - **History Settings**: Command history management and privacy
 
 ### 💾 [Session Management](session-management.md)
+
 Complete session management examples including:
+
 - **Basic Operations**: Creating, saving, loading sessions
 - **Organization**: Tags, priorities, descriptions, metadata
 - **Import/Export**: Backup and sharing sessions
@@ -32,7 +38,9 @@ Complete session management examples including:
 - **Workflows**: Development, code review, and learning patterns
 
 ### 🎨 [Themes and Customization](themes-and-customization.md)
+
 Visual customization and theming guide featuring:
+
 - **Built-in Themes**: Default, Light, Dracula, GitHub, Monokai
 - **Theme Characteristics**: Colors, styles, and use cases
 - **Advanced Customization**: Color schemes, animations, icons
@@ -86,16 +94,19 @@ llamacli preferences set display.codeBlockStyle simple
 ## 📋 Configuration File Locations
 
 ### Main Configuration Files
+
 - **LLM Profiles**: `~/.llamacli/config.json`
 - **User Preferences**: `~/.llamacli/preferences.json`
 - **Command History**: `~/.llamacli/history.json`
 
 ### Session Data
+
 - **Sessions Directory**: `~/.llamacli/sessions/`
 - **Session Templates**: `~/.llamacli/templates/`
 - **Session Archives**: `~/.llamacli/archives/`
 
 ### Logs and Reports
+
 - **Error Reports**: `~/.llamacli/error-reports/`
 - **Performance Logs**: `~/.llamacli/logs/`
 - **Analytics Data**: `~/.llamacli/analytics/`
@@ -103,6 +114,7 @@ llamacli preferences set display.codeBlockStyle simple
 ## 🎯 Common Use Cases
 
 ### 1. Multi-Model Development
+
 ```bash
 # Set up multiple LLM profiles
 llamacli config add local-ollama    # For quick testing
@@ -115,6 +127,7 @@ llamacli config use cloud-claude    # Production work
 ```
 
 ### 2. Team Collaboration
+
 ```bash
 # Export team configuration
 llamacli preferences export team-config.json
@@ -130,6 +143,7 @@ llamacli session template import template.json
 ```
 
 ### 3. Environment-Specific Setups
+
 ```bash
 # Development environment
 llamacli preferences set cli.theme github
@@ -145,6 +159,7 @@ llamacli preferences set behavior.sendTelemetry false
 ## 🔧 Management Commands
 
 ### Configuration Management
+
 ```bash
 # View all configurations
 llamacli config list
@@ -162,6 +177,7 @@ llamacli config reset
 ```
 
 ### Maintenance
+
 ```bash
 # Clean up old data
 llamacli session cleanup --older-than 30d
@@ -178,6 +194,7 @@ llamacli system check
 ## 📖 Related Documentation
 
 ### Core Documentation
+
 - **[User Guide](../USER_GUIDE.md)** - Complete usage guide
 - **[Developer Guide](../DEVELOPER_GUIDE.md)** - Development and extension
 - **[API Reference](../API_REFERENCE.md)** - Detailed API documentation
@@ -185,6 +202,7 @@ llamacli system check
 - **[Roadmap](../ROADMAP.md)** - Development roadmap
 
 ### Advanced Topics
+
 - **Error Handling**: Intelligent error processing and recovery
 - **Performance Monitoring**: Real-time metrics and benchmarking
 - **Security**: Privacy settings and data protection
@@ -193,12 +211,14 @@ llamacli system check
 ## 🆘 Getting Help
 
 ### Troubleshooting
+
 1. Check the specific example files for detailed solutions
 2. Use `llamacli --help` for command-line help
 3. Enable debug mode: `LLAMACLI_DEBUG=1 llamacli your-command`
 4. Validate your configuration: `llamacli config validate`
 
 ### Support Resources
+
 - **Documentation**: Complete guides in the `docs/` directory
 - **Examples**: Real-world configuration examples in this directory
 - **Error Messages**: LlamaCLI provides detailed error messages with solutions
