@@ -1,376 +1,495 @@
-# LlamaCLI 开发者指南
+# LlamaCLI Developer Guide
 
-## 🏗️ 项目架构
+**Version**: 0.9.0  
+**Last Updated**: 2025-08-01
 
-LlamaCLI 采用 monorepo 结构，主要包含两个核心包：
+## 🏗️ Project Architecture
 
-```
+LlamaCLI uses a monorepo structure with two core packages based on the actual implementation:
+
+```text
 packages/
-├── core/           # 核心功能库
+├── core/                           # Core functionality library (@llamacli/core)
 │   ├── src/
-│   │   ├── tools/     # 工具系统
-│   │   ├── adapters/  # LLM 适配器
-│   │   ├── mcp/       # MCP 协议实现
-│   │   └── config/    # 配置管理
-└── cli/            # 命令行界面
+│   │   ├── adapters/              # LLM adapters (Ollama, OpenAI, Claude, Gemini)
+│   │   ├── config/                # Configuration management (ConfigStore, UserPreferences)
+│   │   ├── context/               # Context and session management
+│   │   ├── core/                  # Core systems (AgenticLoop, ToolScheduler)
+│   │   ├── error/                 # Enhanced error handling system
+│   │   ├── mcp/                   # Model Context Protocol implementation
+│   │   ├── performance/           # Performance monitoring and benchmarking
+│   │   ├── session/               # Session management system
+│   │   ├── tools/                 # Tool system and registry
+│   │   ├── types/                 # TypeScript type definitions
+│   │   └── utils/                 # Utility functions
+└── cli/                           # Command line interface (@llamacli/cli)
     ├── src/
-    │   ├── commands/  # CLI 命令
-    │   ├── ui/        # 用户界面组件
-    │   └── utils/     # 工具函数
+    │   ├── commands/              # CLI commands (chat, config, session, preferences)
+    │   ├── ui/                    # User interface components
+    │   │   ├── components/        # React components for terminal UI
+    │   │   ├── completion.ts      # Auto-completion engine
+    │   │   ├── interactive-cli.ts # Interactive CLI interface
+    │   │   ├── syntax-highlighting.ts # Code syntax highlighting
+    │   │   └── theme-manager.ts   # Theme management system
+    │   ├── types/                 # CLI-specific type definitions
+    │   └── utils/                 # CLI utility functions
 ```
 
-## 🚀 开发环境设置
+## 🚀 Development Setup
 
-### 前置要求
+### Prerequisites
 
-- Node.js 18+
-- npm 或 yarn
-- TypeScript 5+
+- Node.js >= 18.0.0
+- npm >= 9.0.0
 
-### 安装和构建
+### Installation
 
 ```bash
-# 克隆项目
+# Clone the repository
 git clone https://github.com/HaochenFa/Llama-CLI.git
 cd Llama-CLI
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 构建项目
+# Build the project
 npm run build
 
-# 开发模式（监听文件变化）
-npm run build:watch
+# Link for development
+npm link packages/cli
+```
 
-# 运行测试
+### Development Scripts
+
+```bash
+# Build all packages
+npm run build
+
+# Build JavaScript only
+npm run build:js
+
+# Build TypeScript declarations
+npm run build:types
+
+# Development mode with watch
+npm run dev
+
+# Run tests
 npm test
 
-# 代码检查
+# Lint code
 npm run lint
 
-# 格式化代码
+# Format code
 npm run format
+
+# Type checking
+npm run typecheck
+
+# Clean build artifacts
+npm run clean
 ```
 
-### 开发工作流
+## 🏗️ Core Components
 
-1. **创建功能分支**: `git checkout -b feature/your-feature`
-2. **开发和测试**: 使用 `npm run build:watch` 进行开发
-3. **运行测试**: `npm test` 确保所有测试通过
-4. **代码检查**: `npm run lint` 修复代码风格问题
-5. **提交代码**: 使用清晰的提交信息
-6. **创建 PR**: 提交 Pull Request 进行代码审查
+### Configuration System
 
-## 🔧 核心组件开发
+#### ConfigStore
 
-### 创建新工具
-
-工具是 LlamaCLI 的核心功能。创建新工具需要实现 `BaseTool` 抽象类：
+The main configuration management system:
 
 ```typescript
-import { BaseTool, ToolParams, ToolContext } from "@llamacli/core";
-
-interface MyToolParams extends ToolParams {
-  input: string;
-  options?: string[];
-}
-
-export class MyCustomTool extends BaseTool {
-  readonly name = "my_tool";
-  readonly description = "Description of what this tool does";
-  readonly schema = {
-    type: "object" as const,
-    properties: {
-      input: {
-        type: "string",
-        description: "Input parameter description",
-      },
-      options: {
-        type: "array",
-        items: { type: "string" },
-        description: "Optional parameters",
-      },
-    },
-    required: ["input"],
-  };
-
-  getTags(): string[] {
-    return ["custom", "example"];
-  }
-
-  isAvailable(context?: ToolContext): boolean {
-    // 检查工具是否可用
-    return true;
-  }
-
-  async execute(params: MyToolParams, context?: ToolContext) {
-    try {
-      // 验证参数
-      const validation = this.validate(params);
-      if (!validation.isValid) {
-        return this.createErrorResult(validation.errors);
-      }
-
-      // 实现工具逻辑
-      const result = await this.performOperation(params);
-
-      return this.createSuccessResult([
-        {
-          type: "text",
-          text: `操作完成: ${result}`,
-        },
-      ]);
-    } catch (error) {
-      return this.createErrorResult([`执行失败: ${error.message}`]);
-    }
-  }
-
-  private async performOperation(params: MyToolParams): Promise<string> {
-    // 具体的工具实现逻辑
-    return `处理了输入: ${params.input}`;
-  }
+// packages/core/src/config/store.ts
+export class ConfigStore {
+  async addProfile(name: string, config: LLMProfile): Promise<void>;
+  async removeProfile(name: string): Promise<void>;
+  async setDefaultProfile(name: string): Promise<void>;
+  getProfiles(): Record<string, LLMProfile>;
+  getProfile(name: string): LLMProfile | undefined;
 }
 ```
 
-### 注册工具
+#### UserPreferencesManager
 
-在 `packages/core/src/tools/index.ts` 中注册新工具：
+Manages user preferences across 6 categories:
 
 ```typescript
-import { MyCustomTool } from "./custom/my-tool.js";
+// packages/core/src/config/user-preferences.ts
+export class UserPreferencesManager {
+  async initialize(): Promise<void>;
+  getCLIPreferences(): CLIPreferences;
+  getEditorPreferences(): EditorPreferences;
+  getDisplayPreferences(): DisplayPreferences;
+  getBehaviorPreferences(): BehaviorPreferences;
+  getShortcutPreferences(): ShortcutPreferences;
+  getHistoryPreferences(): HistoryPreferences;
 
-// 在 getAllTools 函数中添加
-export function getAllTools(): BaseTool[] {
-  return [
-    // ... 现有工具
-    new MyCustomTool(),
-  ];
+  async updateCLIPreferences(updates: Partial<CLIPreferences>): Promise<void>;
+  onPreferencesChange(callback: (prefs: UserPreferences) => void): () => void;
 }
 ```
 
-### 创建 LLM 适配器
+### LLM Adapters
 
-实现新的 LLM 适配器需要实现 `LLMAdapter` 接口：
+All adapters implement the `BaseLLMAdapter` interface:
 
 ```typescript
-import { LLMAdapter, LLMMessage, LLMResponse } from "@llamacli/core";
+// packages/core/src/adapters/base.ts
+export abstract class BaseLLMAdapter {
+  abstract generate(messages: LLMMessage[], options?: LLMGenerationOptions): Promise<LLMResponse>;
 
-export class MyLLMAdapter implements LLMAdapter {
-  constructor(private config: MyLLMConfig) {}
-
-  async generateResponse(
+  abstract generateStream(
     messages: LLMMessage[],
     options?: LLMGenerationOptions
-  ): Promise<LLMResponse> {
-    // 实现与 LLM 的通信逻辑
-    const response = await this.callLLMAPI(messages, options);
-
-    return {
-      content: response.text,
-      usage: {
-        promptTokens: response.usage.input_tokens,
-        completionTokens: response.usage.output_tokens,
-        totalTokens: response.usage.total_tokens,
-      },
-    };
-  }
-
-  async validateConnection(): Promise<boolean> {
-    // 验证连接是否正常
-    try {
-      await this.callHealthCheck();
-      return true;
-    } catch {
-      return false;
-    }
-  }
+  ): AsyncGenerator<LLMStreamChunk>;
 }
 ```
 
-### 添加 CLI 命令
+#### Implemented Adapters
 
-在 `packages/cli/src/commands/` 中创建新命令：
+- **OllamaAdapter**: Local Ollama models
+- **OpenAIAdapter**: OpenAI GPT models
+- **ClaudeAdapter**: Anthropic Claude models
+- **GeminiAdapter**: Google Gemini models
+- **OpenAICompatibleAdapter**: OpenAI-compatible services
+
+### Session Management
+
+#### SessionManager
+
+Handles session lifecycle:
 
 ```typescript
-import { Command } from "commander";
-import { ConfigStore } from "@llamacli/core";
-
-export class MyCommand {
-  constructor(private configStore: ConfigStore) {}
-
-  register(program: Command): void {
-    program
-      .command("my-command")
-      .description("My custom command description")
-      .option("-o, --option <value>", "Command option")
-      .action(async (options) => {
-        await this.run(options);
-      });
-  }
-
-  async run(options: any): Promise<void> {
-    // 实现命令逻辑
-    console.log("执行自定义命令", options);
-  }
+// packages/core/src/session/session-manager.ts
+export class SessionManager {
+  async createSession(name?: string): Promise<SessionData>;
+  async saveSession(session: SessionData): Promise<void>;
+  async loadSession(sessionId: string): Promise<SessionData>;
+  async listSessions(): Promise<SessionData[]>;
+  async deleteSession(sessionId: string): Promise<void>;
+  async exportSession(sessionId: string, filePath: string): Promise<void>;
 }
 ```
 
-## 🧪 测试
+### Performance Monitoring
 
-### 单元测试
+#### PerformanceMonitor
 
-为新功能编写测试：
+Real-time performance tracking:
 
 ```typescript
-import { describe, it, expect, beforeEach } from "vitest";
-import { MyCustomTool } from "../my-tool.js";
+// packages/core/src/performance/monitor.ts
+export class PerformanceMonitor {
+  start(): void;
+  startOperation(name: string): void;
+  endOperation(name: string): PerformanceMetrics;
+  getSystemMetrics(): SystemMetrics;
+}
+```
 
-describe("MyCustomTool", () => {
-  let tool: MyCustomTool;
+### Error Handling
 
-  beforeEach(() => {
-    tool = new MyCustomTool();
-  });
+#### Enhanced Error System
 
-  it("should have correct name and description", () => {
-    expect(tool.name).toBe("my_tool");
-    expect(tool.description).toBeTruthy();
-  });
+Intelligent error processing:
 
-  it("should execute successfully with valid params", async () => {
-    const result = await tool.execute({ input: "test" });
+```typescript
+// packages/core/src/error/enhanced-error-handler.ts
+export class EnhancedErrorHandler {
+  processError(error: Error, context: ErrorContext): EnhancedError;
+  classifyError(error: Error): ErrorType;
+  generateSuggestions(error: EnhancedError): ErrorSuggestion[];
+}
+```
 
-    expect(result.isError).toBe(false);
-    expect(result.content).toHaveLength(1);
-    expect(result.content[0].text).toContain("test");
-  });
+## 🖥️ CLI Components
 
-  it("should handle invalid params", async () => {
-    const result = await tool.execute({} as any);
+### Interactive CLI
 
-    expect(result.isError).toBe(true);
+#### InteractiveCLI
+
+Main interactive interface:
+
+```typescript
+// packages/cli/src/ui/interactive-cli.ts
+export class InteractiveCLI extends EventEmitter {
+  constructor(options: InteractiveCLIOptions);
+  async start(): Promise<void>;
+  on(event: "command", listener: (command: string, args: string[]) => void): this;
+  on(event: "completion", listener: (input: string) => void): this;
+}
+```
+
+#### CompletionEngine
+
+Auto-completion system:
+
+```typescript
+// packages/cli/src/ui/completion.ts
+export class CompletionEngine {
+  async getCompletions(input: string, context: CompletionContext): Promise<string[]>;
+  registerCommandCompletions(command: string, completions: string[]): void;
+}
+```
+
+#### ThemeManager
+
+Theme management:
+
+```typescript
+// packages/cli/src/ui/theme-manager.ts
+export class ThemeManager {
+  async setTheme(themeName: string): Promise<void>;
+  getCurrentTheme(): CLITheme;
+  getAvailableThemes(): string[];
+}
+```
+
+### Commands
+
+All commands extend the base command class:
+
+```typescript
+// packages/cli/src/commands/base.ts
+export abstract class BaseCommand {
+  constructor(protected configStore: ConfigStore)
+  abstract run(options: any): Promise<void>
+}
+```
+
+#### Implemented Commands
+
+- **ChatCommand**: Interactive chat sessions
+- **ConfigCommand**: Profile management
+- **GetCommand**: Quick queries
+- **SessionCommand**: Session management
+- **PreferencesCommand**: User preferences
+
+## 🧪 Testing
+
+### Test Structure
+
+```text
+packages/
+├── core/src/__tests__/
+│   ├── integration.test.ts
+│   └── adapters/
+│       └── adapters.test.ts
+└── cli/src/__tests__/
+    └── cli.test.ts
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npx vitest packages/core/src/__tests__/integration.test.ts
+```
+
+### Writing Tests
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { ConfigStore } from "../config/store.js";
+
+describe("ConfigStore", () => {
+  it("should add and retrieve profiles", async () => {
+    const store = new ConfigStore();
+    await store.addProfile("test", {
+      adapter: "ollama",
+      model: "llama2",
+    });
+
+    const profile = store.getProfile("test");
+    expect(profile).toBeDefined();
+    expect(profile?.model).toBe("llama2");
   });
 });
 ```
 
-### 运行测试
+## 🔧 Build System
+
+### esbuild Configuration
+
+The project uses esbuild for fast compilation:
+
+```javascript
+// esbuild.config.js
+const packages = [
+  {
+    name: "core",
+    entryPoints: ["packages/core/src/index.ts"],
+    outfile: "packages/core/dist/index.js",
+  },
+  {
+    name: "cli",
+    entryPoints: ["packages/cli/src/index.ts"],
+    outfile: "packages/cli/dist/index.js",
+    banner: { js: "#!/usr/bin/env node" },
+  },
+];
+```
+
+### TypeScript Configuration
+
+Each package has its own TypeScript configuration:
+
+```json
+// packages/core/tsconfig.json
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "references": []
+}
+```
+
+## 🚀 Adding New Features
+
+### Adding a New LLM Adapter
+
+1. Create adapter class:
+
+```typescript
+// packages/core/src/adapters/my-adapter.ts
+import { BaseLLMAdapter } from "./base.js";
+
+export class MyAdapter extends BaseLLMAdapter {
+  async generate(messages: LLMMessage[]): Promise<LLMResponse> {
+    // Implementation
+  }
+}
+```
+
+2. Export from index:
+
+```typescript
+// packages/core/src/index.ts
+export * from "./adapters/my-adapter.js";
+```
+
+3. Add to adapter factory:
+
+```typescript
+// packages/cli/src/utils/adapter-factory.ts
+case 'my-adapter':
+  return new MyAdapter(config);
+```
+
+### Adding a New CLI Command
+
+1. Create command class:
+
+```typescript
+// packages/cli/src/commands/my-command.ts
+import { BaseCommand } from "./base.js";
+
+export class MyCommand extends BaseCommand {
+  async run(options: any): Promise<void> {
+    // Implementation
+  }
+}
+```
+
+2. Register in main CLI:
+
+```typescript
+// packages/cli/src/index.ts
+program
+  .command("my-command")
+  .description("My new command")
+  .action(async (options) => {
+    const command = new MyCommand(configStore);
+    await command.run(options);
+  });
+```
+
+## 📝 Code Style
+
+### ESLint Configuration
+
+```json
+{
+  "extends": ["@typescript-eslint/recommended"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/explicit-function-return-type": "warn"
+  }
+}
+```
+
+### Prettier Configuration
+
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2
+}
+```
+
+## 🐛 Debugging
+
+### Debug Mode
+
+Enable debug logging:
 
 ```bash
-# 运行所有测试
-npm test
-
-# 运行特定测试文件
-npm test -- my-tool.test.ts
-
-# 监听模式
-npm test -- --watch
-
-# 生成覆盖率报告
-npm test -- --coverage
+LLAMACLI_DEBUG=1 llamacli your-command
 ```
 
-## 📝 代码规范
+### Performance Analysis
 
-### TypeScript 规范
+Run performance analysis:
 
-- 使用严格的 TypeScript 配置
-- 为所有公共 API 提供类型定义
-- 避免使用 `any`，优先使用具体类型
-- 使用接口定义复杂对象结构
-
-### 命名规范
-
-- **文件名**: kebab-case (`my-tool.ts`)
-- **类名**: PascalCase (`MyCustomTool`)
-- **函数/变量**: camelCase (`executeCommand`)
-- **常量**: UPPER_SNAKE_CASE (`MAX_RETRIES`)
-
-### 错误处理
-
-- 使用统一的错误处理机制
-- 提供有意义的错误信息
-- 记录适当的日志级别
-
-### 文档
-
-- 为所有公共 API 编写 JSDoc 注释
-- 在 README 中更新功能说明
-- 为复杂功能提供使用示例
-
-## 🔄 发布流程
-
-### 版本管理
-
-项目使用语义化版本控制：
-
-- **主版本号**: 不兼容的 API 修改
-- **次版本号**: 向下兼容的功能性新增
-- **修订号**: 向下兼容的问题修正
-
-### 发布步骤
-
-1. **更新版本号**: 在 `package.json` 中更新版本
-2. **更新 CHANGELOG**: 记录本次发布的变更
-3. **运行测试**: 确保所有测试通过
-4. **构建项目**: `npm run build`
-5. **创建标签**: `git tag v1.0.0`
-6. **推送代码**: `git push origin main --tags`
-
-## 🤝 贡献指南
-
-### 提交规范
-
-使用约定式提交格式：
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-
-[optional footer]
+```bash
+npm run perf
 ```
 
-类型包括：
+### Memory Profiling
 
-- `feat`: 新功能
-- `fix`: 修复问题
-- `docs`: 文档更新
-- `style`: 代码格式调整
-- `refactor`: 代码重构
-- `test`: 测试相关
-- `chore`: 构建过程或辅助工具的变动
+```bash
+node --inspect packages/cli/dist/index.js
+```
 
-### Pull Request
+## 🤝 Contributing
 
-1. Fork 项目到您的 GitHub 账户
-2. 创建功能分支
-3. 进行开发和测试
-4. 提交 Pull Request
-5. 等待代码审查和合并
+### Development Workflow
 
-### 问题报告
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make changes and add tests
+4. Run tests: `npm test`
+5. Run linting: `npm run lint`
+6. Commit changes: `git commit -m "feat: add my feature"`
+7. Push to branch: `git push origin feature/my-feature`
+8. Create a Pull Request
 
-报告问题时请包含：
+### Commit Convention
 
-- 详细的问题描述
-- 重现步骤
-- 期望行为
-- 实际行为
-- 环境信息（操作系统、Node.js 版本等）
+Use conventional commits:
 
-## 📚 有用资源
+```
+feat: add new feature
+fix: fix bug
+docs: update documentation
+style: formatting changes
+refactor: code refactoring
+test: add tests
+chore: maintenance tasks
+```
 
-- [TypeScript 文档](https://www.typescriptlang.org/docs/)
-- [Vitest 测试框架](https://vitest.dev/)
-- [Ink React 终端 UI](https://github.com/vadimdemedes/ink)
-- [MCP 协议规范](https://modelcontextprotocol.io/)
-- [esbuild 构建工具](https://esbuild.github.io/)
+---
 
-## 💬 获取帮助
-
-- **GitHub Issues**: 报告问题和功能请求
-- **GitHub Discussions**: 技术讨论和问答
-- **代码审查**: 通过 Pull Request 获取反馈
-
-感谢您对 LlamaCLI 项目的贡献！
+For API details and usage examples, see the [API Reference](API_REFERENCE.md) and [User Guide](USER_GUIDE.md).
