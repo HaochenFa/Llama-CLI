@@ -1,8 +1,10 @@
 # LlamaCLI Features Documentation
 
-**Version**: 0.9.0  
-**Last Updated**: 2025-01-30  
+**Version**: 0.9.0
+**Last Updated**: 2025-01-30
 **Status**: Production Ready
+
+> This document describes the actual implemented features based on the codebase and commit history.
 
 ## Overview
 
@@ -170,7 +172,7 @@ Intelligent error processing that transforms technical errors into actionable gu
 
 All features are implemented as independent, reusable components:
 
-```
+```text
 packages/
 ├── core/                    # Core functionality
 │   ├── config/             # Configuration management

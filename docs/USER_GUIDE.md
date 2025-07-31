@@ -1,193 +1,437 @@
-# LlamaCLI 用户使用指南
+# LlamaCLI User Guide
 
-## 🚀 快速开始
+**Version**: 0.9.0  
+**Last Updated**: 2025-08-01
 
-### 安装
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
-# 克隆项目
+# Clone the repository
 git clone https://github.com/HaochenFa/Llama-CLI.git
 cd Llama-CLI
 
-# 安装依赖并构建
+# Install dependencies and build
 npm install
 npm run build
 
-# 创建全局链接（可选）
+# Create global link (optional)
 npm link packages/cli
 ```
 
-### 首次使用
+### First Time Setup
+
+1. **Start LlamaCLI**:
+
+   ```bash
+   llamacli
+   ```
+
+2. **Configure your first LLM profile**:
+
+   ```bash
+   llamacli config add my-ollama
+   ```
+
+   Follow the interactive setup to configure your LLM connection.
+
+3. **Start chatting**:
+   ```bash
+   llamacli chat "Hello, how can you help me with development?"
+   ```
+
+## 🖥️ Interactive Mode
+
+LlamaCLI automatically starts in interactive mode, providing a modern CLI experience with enhanced features.
+
+### Starting Interactive Mode
 
 ```bash
-# 启动聊天界面
-llamacli chat
+# Start interactive mode (default)
+llamacli
+
+# Or explicitly
+llamacli --interactive
 ```
 
-首次运行时会自动启动配置向导，帮助您：
+### Interactive Features
 
-1. 选择 LLM 提供商（目前支持 Ollama）
-2. 配置模型和连接参数
-3. 测试连接是否正常
+- **🔤 Auto-completion**: Press `Tab` for intelligent command suggestions
+- **🎨 Syntax Highlighting**: Code is automatically highlighted in multiple languages
+- **📚 Command History**: Use `↑/↓` arrows to navigate command history
+- **🌈 Themes**: Switch between 5 built-in themes
+- **⌨️ Keyboard Shortcuts**:
+  - `Ctrl+L`: Clear screen
+  - `Ctrl+D`: Exit application
+  - `Tab`: Auto-completion
+  - `↑/↓`: Navigate command history
 
-### 基本命令
+### Available Commands
+
+In interactive mode, you can use these commands:
+
+- `help` - Show help information
+- `chat [message]` - Start or continue chat conversation
+- `get <query>` - Quick one-off questions
+- `config list` - Show LLM profiles
+- `config use <profile>` - Switch active profile
+- `theme <name>` - Change visual theme
+- `preferences list` - Show all preferences
+- `session list` - Show saved sessions
+- `clear` - Clear the screen
+- `exit` / `quit` - Exit the application
+
+## ⚙️ Configuration
+
+### LLM Profiles
+
+LlamaCLI supports multiple LLM providers through profiles:
 
 ```bash
-# 开始聊天会话
-llamacli chat
+# Add new profile
+llamacli config add my-profile
 
-# 使用特定配置文件
-llamacli chat --profile my-profile
-
-# 包含文件上下文
-llamacli chat --file README.md
-
-# 查看配置
+# List all profiles
 llamacli config list
 
-# 获取帮助
-llamacli --help
+# Switch active profile
+llamacli config use my-profile
+
+# Remove profile
+llamacli config remove my-profile
 ```
 
-## ⚙️ 配置管理
+### Supported LLM Providers
+
+#### Local Models
+
+- **Ollama**: Local model hosting (llama2, codellama, etc.)
+
+#### Cloud Models
+
+- **OpenAI**: GPT-3.5, GPT-4, GPT-4 Turbo
+- **Anthropic Claude**: Claude-3 Haiku, Sonnet, Opus
+- **Google Gemini**: Gemini 1.5 Pro, Flash
+
+#### OpenAI-Compatible
+
+- **Local Services**: LM Studio, vLLM, FastChat
+- **Cloud Services**: Any OpenAI-compatible API
+
+### Profile Configuration Examples
+
+#### Ollama Profile
 
 ```bash
-# 查看所有配置
-llamacli config list
-
-# 添加新配置
-llamacli config add
-
-# 编辑配置
-llamacli config edit my-profile
-
-# 设置默认配置
-llamacli config set-default my-profile
+llamacli config add local-llama
+# Select: ollama
+# Model: llama2
+# Endpoint: http://localhost:11434 (default)
 ```
 
-## 💬 聊天界面
-
-### 基本操作
-
-- **发送消息**: 输入文本并按回车
-- **退出**: 按 `Ctrl+C`
-- **清屏**: 按 `Ctrl+L`
-
-### 🛡️ 工具确认
-
-当 AI 需要使用工具时，会显示确认对话框：
-
-- **Yes, allow once**: 仅允许这一次执行
-- **Yes, allow always for this session**: 会话内总是允许
-- **No (esc)**: 拒绝执行
-
-使用 ↑/↓ 导航，Enter 选择，Esc 取消。
-
-## 🔧 可用工具
-
-### 文件系统工具
-
-- **读取文件**: AI 可以读取项目中的文件来理解代码结构
-- **写入文件**: AI 可以创建新文件或修改现有文件
-- **目录列表**: AI 可以查看目录结构了解项目组织
-- **文件搜索**: AI 可以在项目中搜索特定的代码模式
-
-### Shell 工具
-
-- **命令执行**: AI 可以执行 Shell 命令完成各种任务
-- **安全限制**: 自动阻止危险命令，限制工作目录访问
-
-## 💡 使用技巧
-
-### 安全使用
-
-1. **仔细审查工具调用**: 始终检查 AI 要执行的操作
-2. **谨慎使用自动批准**: `--yolo` 模式会跳过所有确认
-3. **定期备份**: 在进行大量文件修改前备份项目
-
-### 提高效率
-
-1. **使用会话级授权**: 对重复操作选择"总是允许"
-2. **提供清晰的上下文**: 明确说明您的需求和约束
-3. **分步骤操作**: 将复杂任务分解为多个步骤
-
-## 🔧 故障排除
-
-### 连接问题
+#### OpenAI Profile
 
 ```bash
-# 检查 Ollama 是否运行
-curl http://localhost:11434/api/tags
-
-# 重新配置连接
-llamacli config edit default
+llamacli config add gpt4
+# Select: openai
+# Model: gpt-4
+# API Key: [your-api-key]
 ```
 
-### 工具执行失败
+## 🎨 Customization
 
-1. **检查权限**: 确保有足够的文件系统权限
-2. **验证路径**: 确认文件和目录路径正确
-3. **查看错误信息**: 仔细阅读错误提示
+### Themes
 
-### 性能问题
-
-1. **减少上下文**: 避免包含过大的文件
-2. **调整超时**: 增加网络请求的超时时间
-3. **使用本地模型**: Ollama 通常比云端 API 更快
-
-## 🔧 高级配置
-
-### 环境变量
-
-- `LLAMACLI_CONFIG_DIR`: 配置目录路径
-- `LLAMACLI_LOG_LEVEL`: 日志级别 (debug, info, warn, error)
-- `LLAMACLI_TIMEOUT`: 默认超时时间（毫秒）
-
-### 调试模式
+LlamaCLI includes 5 built-in themes:
 
 ```bash
-# 启用详细日志
-LLAMACLI_LOG_LEVEL=debug llamacli chat
+# Change theme
+llamacli preferences set cli.theme dracula
 
-# 查看配置信息
-llamacli config debug
+# Available themes:
+# - default (dark theme with blue accents)
+# - light (clean light theme)
+# - dracula (purple accents)
+# - github (GitHub-inspired)
+# - monokai (vibrant colors)
 ```
 
-## ❓ 常见问题
+### User Preferences
 
-### Q: 如何更新 LlamaCLI？
-
-A: 目前需要手动更新：
+Customize your experience with 50+ configurable options:
 
 ```bash
-cd Llama-CLI
-git pull
-npm install
-npm run build
+# List all preferences
+llamacli preferences list
+
+# View specific category
+llamacli preferences list --section cli
+
+# Get specific preference
+llamacli preferences get cli.theme
+
+# Set preference
+llamacli preferences set cli.autoComplete true
+
+# Reset preferences
+llamacli preferences reset --section cli
+
+# Export settings for backup
+llamacli preferences export my-settings.json
+
+# Import settings
+llamacli preferences import my-settings.json
 ```
 
-### Q: 可以同时连接多个 LLM 吗？
+### Preference Categories
 
-A: 目前每个会话只能使用一个 LLM 配置文件，但可以在不同会话中使用不同的配置。
+#### CLI Settings
 
-### Q: 工具调用失败怎么办？
+- Theme and color scheme
+- Custom prompt text
+- Auto-completion behavior
+- Syntax highlighting
+- Welcome messages and tips
 
-A: 检查错误信息，确认权限和路径，必要时重新配置相关设置。
+#### Editor Settings
 
-### Q: 如何备份配置？
+- Default text editor
+- Tab size and indentation
+- Line numbers and word wrap
+- Font family and size
 
-A: 复制配置目录：
+#### Display Settings
+
+- Maximum display width
+- Date and time formats
+- Code block styling
+- Table formatting
+
+#### Behavior Settings
+
+- Exit and delete confirmations
+- Auto-save functionality
+- Notification preferences
+- Telemetry settings
+
+#### Keyboard Shortcuts
+
+- Customizable key bindings
+- Screen clearing shortcuts
+- Theme toggle keys
+
+#### Command History
+
+- History persistence
+- Maximum entries
+- Pattern exclusions
+- Search functionality
+
+## 💬 Chat Features
+
+### Basic Chat
 
 ```bash
-cp -r ~/.llamacli ~/.llamacli.backup
+# Start a conversation
+llamacli chat "Explain how async/await works in JavaScript"
+
+# Continue the conversation
+llamacli chat "Can you show me a practical example?"
+
+# Include file context
+llamacli chat "Review this code" --file src/index.ts
 ```
 
-## 📚 更多资源
+### Quick Queries
 
-- **[开发者指南](DEVELOPER_GUIDE.md)** - 贡献代码和扩展开发
-- **[API 参考](API_REFERENCE.md)** - 详细的 API 文档
-- **[GitHub Issues](https://github.com/HaochenFa/Llama-CLI/issues)** - 报告问题和功能请求
+```bash
+# One-off questions
+llamacli get "What's the current time in Tokyo?"
+llamacli get "How to reverse a string in Python?"
+llamacli get "Best practices for React hooks"
+```
+
+### Session Management
+
+```bash
+# List all sessions
+llamacli session list
+
+# Save current conversation
+llamacli session save my-project-discussion
+
+# Load previous session
+llamacli session load my-project-discussion
+
+# Export session for sharing
+llamacli session export my-session.json
+
+# Import session
+llamacli session import shared-session.json
+
+# Delete old sessions
+llamacli session delete old-session
+```
+
+## 🛠️ Advanced Features
+
+### File Operations
+
+LlamaCLI can help with file operations through its tool system:
+
+```bash
+llamacli chat "Read the package.json file and explain the dependencies"
+llamacli chat "Create a new README.md file for this project"
+llamacli chat "Find all TypeScript files in the src directory"
+```
+
+### Code Analysis
+
+```bash
+llamacli chat "Analyze the code in src/index.ts and suggest improvements"
+llamacli chat "Find all TODO comments in the project"
+llamacli chat "Check for potential security issues in this code"
+```
+
+### Shell Integration
+
+```bash
+llamacli chat "Run npm test and explain the results"
+llamacli chat "Check the git status and suggest next steps"
+llamacli chat "What files have changed since the last commit?"
+```
+
+## 🚨 Error Handling
+
+LlamaCLI provides intelligent error handling with helpful recovery suggestions:
+
+### Error Types
+
+- **Network Issues**: Connection troubleshooting
+- **Authentication**: API key validation and setup
+- **Configuration**: Profile setup and validation
+- **File Operations**: Permission and path guidance
+- **Validation**: Input format and syntax help
+
+### Error Features
+
+- Clear, user-friendly error messages
+- Priority-based recovery suggestions
+- Specific commands to fix issues
+- Interactive error recovery options
+- Debug information for developers
+
+## 📊 Performance
+
+LlamaCLI is optimized for excellent performance:
+
+- **Startup Time**: <350ms (65% better than target)
+- **Memory Usage**: <30MB (85% better than target)
+- **Response Time**: Near-instantaneous for most operations
+- **Auto-completion**: <10ms response time
+- **Theme Switching**: <5ms transition time
+
+## 🔒 Privacy & Security
+
+### Data Protection
+
+- **Local First**: All data stored locally by default
+- **No Telemetry**: Telemetry disabled by default (user-controlled)
+- **Secure Storage**: Encrypted credential storage
+- **Pattern Filtering**: Automatic exclusion of sensitive data from history
+
+### Permission System
+
+- Granular permission controls
+- Tool execution confirmations
+- Session-level permission management
+- Audit trail for security-sensitive operations
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **Command not found**
+   - Ensure LlamaCLI is properly installed: `npm run build`
+   - Check global link: `npm link packages/cli`
+
+2. **API connection errors**
+   - Verify API keys: `llamacli config list`
+   - Check network connection
+   - Confirm service endpoints
+
+3. **Slow responses**
+   - Check LLM service status
+   - Verify network connectivity
+   - Try different model/profile
+
+4. **Theme or display issues**
+   - Reset CLI preferences: `llamacli preferences reset --section cli`
+   - Check terminal compatibility
+
+### Debug Mode
+
+Enable detailed debugging information:
+
+```bash
+LLAMACLI_DEBUG=1 llamacli your-command
+```
+
+### Getting Help
+
+- Use `llamacli --help` for command-line help
+- Use `help` command in interactive mode
+- Check error messages for specific guidance
+- Review the [API Reference](API_REFERENCE.md) for technical details
+
+## 📚 Example Workflows
+
+### Daily Development
+
+```bash
+# Start your development session
+llamacli
+
+# Check project status
+> chat "Analyze the current project structure and suggest today's priorities"
+
+# Code review
+> chat "Review the changes in the last commit"
+
+# Documentation
+> chat "Update the README with the new features we added"
+
+# Testing
+> chat "Run the test suite and explain any failures"
+```
+
+### Learning New Technologies
+
+```bash
+# Learn concepts
+> get "Explain React Server Components with examples"
+
+# Practice coding
+> chat "Help me build a simple Next.js app with TypeScript"
+
+# Debug issues
+> chat "I'm getting this error: [paste error]. How do I fix it?"
+```
+
+### Code Refactoring
+
+```bash
+# Analyze code quality
+> chat "Analyze this function and suggest improvements" --file src/utils.ts
+
+# Refactor suggestions
+> chat "How can I make this code more maintainable?"
+
+# Performance optimization
+> chat "Are there any performance issues in this code?"
+```
 
 ---
 
-需要帮助？欢迎在 GitHub 上提出问题或参与讨论！
+For advanced usage, API details, and development information, see the [Developer Guide](DEVELOPER_GUIDE.md) and [API Reference](API_REFERENCE.md).

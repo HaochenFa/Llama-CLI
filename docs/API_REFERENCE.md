@@ -1,348 +1,394 @@
-# LlamaCLI API 参考文档
+# LlamaCLI API Reference
 
-## 概述
+**Version**: 0.9.0  
+**Last Updated**: 2025-08-01
 
-LlamaCLI 提供了丰富的API和工具系统，本文档详细介绍了各个组件的使用方法。
+## Overview
 
-## 核心组件
+LlamaCLI provides a comprehensive API for building AI-powered command-line applications. This document covers the main APIs based on the actual implementation.
 
-### 1. 工具系统 (Tools)
+## Core Package (@llamacli/core)
 
-LlamaCLI 的工具系统基于统一的接口设计，所有工具都实现了 `BaseTool` 抽象类。
-
-#### 文件系统工具
-
-##### ReadFileTool
-
-安全地读取文件内容。
-
-```typescript
-import { ReadFileTool } from "@llamacli/core";
-
-const tool = new ReadFileTool();
-const result = await tool.execute({
-  filePath: "./example.txt",
-  encoding: "utf8",
-  startLine: 1,
-  endLine: 10,
-});
-```
-
-**参数：**
-
-- `filePath` (string, 必需): 要读取的文件路径
-- `encoding` (string, 可选): 文件编码，默认 'utf8'
-- `startLine` (number, 可选): 起始行号（1-based）
-- `endLine` (number, 可选): 结束行号（1-based）
-- `maxSize` (number, 可选): 最大文件大小限制
-
-**安全特性：**
-
-- 阻止访问系统敏感路径（/etc/passwd 等）
-- 阻止读取可执行文件
-- 自动检测二进制文件并警告
-- 文件大小限制保护
-
-##### WriteFileTool
-
-安全地写入文件内容。
-
-```typescript
-import { WriteFileTool } from "@llamacli/core";
-
-const tool = new WriteFileTool();
-const result = await tool.execute({
-  filePath: "./output.txt",
-  content: "Hello, World!",
-  createDirectories: true,
-  backup: true,
-});
-```
-
-**参数：**
-
-- `filePath` (string, 必需): 目标文件路径
-- `content` (string, 必需): 要写入的内容
-- `encoding` (string, 可选): 文件编码，默认 'utf8'
-- `createDirectories` (boolean, 可选): 是否创建父目录，默认 true
-- `backup` (boolean, 可选): 是否创建备份，默认 false
-- `mode` (number, 可选): 文件权限，默认 0o644
-
-##### ListDirectoryTool
-
-列出目录内容。
-
-```typescript
-import { ListDirectoryTool } from "@llamacli/core";
-
-const tool = new ListDirectoryTool();
-const result = await tool.execute({
-  directoryPath: "./src",
-  recursive: true,
-  includeHidden: false,
-  sortBy: "name",
-  sortOrder: "asc",
-});
-```
-
-**参数：**
-
-- `directoryPath` (string, 必需): 目录路径
-- `recursive` (boolean, 可选): 是否递归列出子目录，默认 false
-- `includeHidden` (boolean, 可选): 是否包含隐藏文件，默认 false
-- `sortBy` (string, 可选): 排序字段 ('name'|'size'|'modified'|'type')
-- `sortOrder` (string, 可选): 排序顺序 ('asc'|'desc')
-- `maxEntries` (number, 可选): 最大条目数限制
-- `excludePatterns` (string[], 可选): 排除模式
-
-##### SearchFilesTool
-
-在文件中搜索文本模式。
-
-```typescript
-import { SearchFilesTool } from "@llamacli/core";
-
-const tool = new SearchFilesTool();
-const result = await tool.execute({
-  pattern: "function",
-  directoryPath: "./src",
-  filePattern: "*.ts",
-  recursive: true,
-  caseSensitive: false,
-  useRegex: false,
-});
-```
-
-**参数：**
-
-- `pattern` (string, 必需): 搜索模式
-- `directoryPath` (string, 可选): 搜索目录，默认当前目录
-- `filePattern` (string, 可选): 文件名模式，默认 '\*'
-- `recursive` (boolean, 可选): 是否递归搜索，默认 true
-- `caseSensitive` (boolean, 可选): 是否大小写敏感，默认 false
-- `wholeWord` (boolean, 可选): 是否匹配整词，默认 false
-- `useRegex` (boolean, 可选): 是否使用正则表达式，默认 false
-- `maxResults` (number, 可选): 最大结果数，默认 100
-- `contextLines` (number, 可选): 上下文行数，默认 2
-
-#### Shell工具
-
-##### ShellExecuteTool
-
-安全地执行Shell命令。
-
-```typescript
-import { ShellExecuteTool } from "@llamacli/core";
-
-const tool = new ShellExecuteTool();
-const result = await tool.execute({
-  command: 'echo "Hello, World!"',
-  workingDirectory: "/tmp",
-  timeout: 30000,
-  environment: { NODE_ENV: "development" },
-});
-```
-
-**参数：**
-
-- `command` (string, 必需): 要执行的命令
-- `workingDirectory` (string, 可选): 工作目录
-- `timeout` (number, 可选): 超时时间（毫秒），默认 30000
-- `shell` (string, 可选): Shell路径，默认 '/bin/bash'
-- `environment` (object, 可选): 环境变量
-- `input` (string, 可选): 标准输入内容
-
-**安全特性：**
-
-- 阻止危险命令（rm -rf /、fork bomb等）
-- 限制允许的Shell路径
-- 限制工作目录访问
-- 命令执行超时保护
-- 输出大小限制
-
-### 2. MCP协议支持
-
-#### BuiltinMCPServer
-
-内置的MCP服务器实现，自动注册所有工具。
-
-```typescript
-import { BuiltinMCPServer } from "@llamacli/core";
-
-const server = new BuiltinMCPServer({
-  name: "llamacli-server",
-  version: "1.0.0",
-  maxConcurrentRequests: 10,
-  requestTimeout: 30000,
-  enableLogging: true,
-});
-
-await server.start();
-
-// 获取注册的工具
-const tools = server.getTools();
-console.log(
-  "Available tools:",
-  tools.map((t) => t.name)
-);
-
-await server.stop();
-```
-
-#### MCPClient
-
-MCP客户端实现，用于连接外部MCP服务器。
-
-```typescript
-import { MCPClient } from "@llamacli/core";
-
-const client = new MCPClient({
-  serverCommand: "node",
-  serverArgs: ["mcp-server.js"],
-  timeout: 30000,
-});
-
-await client.connect();
-const tools = await client.listTools();
-const result = await client.callTool("tool_name", { param: "value" });
-await client.disconnect();
-```
-
-### 3. LLM适配器
-
-#### OllamaAdapter
-
-Ollama本地模型适配器。
-
-```typescript
-import { OllamaAdapter } from "@llamacli/core";
-
-const adapter = new OllamaAdapter({
-  baseUrl: "http://localhost:11434",
-  model: "llama2",
-  timeout: 60000,
-});
-
-const response = await adapter.generateResponse({
-  messages: [{ role: "user", content: "Hello, how are you?" }],
-  temperature: 0.7,
-  maxTokens: 1000,
-});
-```
-
-### 4. 配置系统
+### Configuration Management
 
 #### ConfigStore
 
-类型安全的配置管理。
+Type-safe configuration storage and management.
 
 ```typescript
 import { ConfigStore } from "@llamacli/core";
 
 const configStore = new ConfigStore();
 
-// 获取配置
-const config = configStore.getConfig();
-
-// 添加LLM配置文件
-configStore.addProfile({
-  id: "local-llama",
-  name: "Local Llama",
-  type: "ollama",
+// Profile management
+await configStore.addProfile("my-ollama", {
+  adapter: "ollama",
   model: "llama2",
-  baseUrl: "http://localhost:11434",
+  endpoint: "http://localhost:11434",
 });
 
-// 设置默认配置文件
-configStore.setDefaultProfile("local-llama");
-
-// 保存配置
-configStore.save();
+await configStore.setDefaultProfile("my-ollama");
+const profiles = configStore.getProfiles();
 ```
 
-## 错误处理
+#### UserPreferencesManager
 
-所有工具和组件都返回统一的结果格式：
+Comprehensive user preferences system with 50+ configurable options.
 
 ```typescript
-interface MCPToolCallResult {
-  content: MCPContent[];
-  isError: boolean;
-}
+import { userPreferencesManager } from "@llamacli/core";
 
-interface MCPContent {
-  type: "text" | "image" | "resource";
-  text?: string;
-  data?: string;
-  mimeType?: string;
-}
+// Initialize
+await userPreferencesManager.initialize();
+
+// Get preferences by category
+const cliPrefs = userPreferencesManager.getCLIPreferences();
+const editorPrefs = userPreferencesManager.getEditorPreferences();
+const displayPrefs = userPreferencesManager.getDisplayPreferences();
+
+// Update preferences
+await userPreferencesManager.updateCLIPreferences({
+  theme: "dracula",
+  autoComplete: true,
+  syntaxHighlighting: true,
+});
+
+// Watch for changes
+const unwatch = userPreferencesManager.onPreferencesChange((prefs) => {
+  console.log("Preferences updated:", prefs.cli.theme);
+});
 ```
 
-## 安全考虑
+### LLM Adapters
 
-LlamaCLI 在设计时充分考虑了安全性：
+#### Supported Adapters
 
-1. **路径验证**: 所有文件操作都会验证路径安全性
-2. **命令过滤**: Shell工具会过滤危险命令
-3. **用户确认**: 危险操作需要用户明确确认
-4. **资源限制**: 文件大小、执行时间等都有合理限制
-5. **沙箱环境**: 工具在受限环境中执行
-
-## 扩展开发
-
-### 创建自定义工具
+- **OllamaAdapter** - Local Ollama models
+- **OpenAIAdapter** - OpenAI GPT models
+- **ClaudeAdapter** - Anthropic Claude models
+- **GeminiAdapter** - Google Gemini models
+- **OpenAICompatibleAdapter** - OpenAI-compatible services
 
 ```typescript
-import { BaseTool, ToolParams, ToolContext } from "@llamacli/core";
+import { OllamaAdapter, OpenAIAdapter } from "@llamacli/core";
 
-interface MyToolParams extends ToolParams {
-  input: string;
-}
+// Ollama adapter
+const ollama = new OllamaAdapter({
+  type: "ollama",
+  baseUrl: "http://localhost:11434",
+  model: "llama2",
+  timeout: 30000,
+});
 
-class MyCustomTool extends BaseTool {
-  readonly name = "my_tool";
-  readonly description = "My custom tool";
-  readonly schema = {
-    type: "object" as const,
-    properties: {
-      input: { type: "string", description: "Input parameter" },
-    },
-    required: ["input"],
+// OpenAI adapter
+const openai = new OpenAIAdapter({
+  type: "openai",
+  baseUrl: "https://api.openai.com/v1",
+  model: "gpt-4",
+  apiKey: process.env.OPENAI_API_KEY,
+});
+```
+
+### Session Management
+
+#### SessionManager
+
+Comprehensive session lifecycle management.
+
+```typescript
+import { SessionManager } from "@llamacli/core";
+
+const sessionManager = new SessionManager();
+
+// Create and manage sessions
+const session = await sessionManager.createSession("my-session");
+await sessionManager.saveSession(session);
+const sessions = await sessionManager.listSessions();
+
+// Session operations
+await sessionManager.switchToSession("session-id");
+await sessionManager.exportSession("session-id", "/path/to/export.json");
+```
+
+### Performance Monitoring
+
+#### PerformanceMonitor
+
+Real-time performance tracking and metrics collection.
+
+```typescript
+import { performanceMonitor, benchmark } from "@llamacli/core";
+
+// Start monitoring
+performanceMonitor.start();
+
+// Track operations
+performanceMonitor.startOperation("command-execution");
+// ... do work ...
+const metrics = performanceMonitor.endOperation("command-execution");
+
+// Benchmarking
+benchmark.start("startup");
+// ... initialization code ...
+const duration = benchmark.end("startup");
+```
+
+### Error Handling
+
+#### Enhanced Error System
+
+Intelligent error processing with user-friendly messages.
+
+```typescript
+import { enhancedErrorHandler, errorDisplayManager, errorMiddleware } from "@llamacli/core";
+
+// Process errors
+const enhancedError = enhancedErrorHandler.processError(error, {
+  command: "chat",
+  operation: "send-message",
+  sessionId: "session-123",
+});
+
+// Display errors
+await errorDisplayManager.displayError(enhancedError, true);
+
+// Wrap functions
+const safeFunction = errorMiddleware.wrapFunction(riskyFunction);
+```
+
+### Tool System
+
+#### Tool Registry and Execution
+
+```typescript
+import { ToolRegistry, ToolExecutor } from "@llamacli/core";
+
+const registry = new ToolRegistry();
+const executor = new ToolExecutor(registry);
+
+// Execute tools
+const result = await executor.executeTool("ReadFileTool", {
+  filePath: "./example.txt",
+});
+```
+
+## CLI Package (@llamacli/cli)
+
+### Interactive CLI
+
+#### InteractiveCLI
+
+Enhanced command-line interface with modern features.
+
+```typescript
+import { InteractiveCLI } from "@llamacli/cli";
+
+const cli = new InteractiveCLI({
+  enableCompletion: true,
+  enableSyntaxHighlighting: true,
+  configStore: configStore,
+});
+
+// Event handling
+cli.on("command", (command, args) => {
+  // Handle command execution
+});
+
+cli.on("completion", (input) => {
+  // Handle auto-completion
+});
+
+await cli.start();
+```
+
+#### Theme Management
+
+```typescript
+import { themeManager } from "@llamacli/cli";
+
+// Available themes: default, light, dracula, github, monokai
+await themeManager.setTheme("dracula");
+const currentTheme = themeManager.getCurrentTheme();
+const themes = themeManager.getAvailableThemes();
+```
+
+#### Auto-completion
+
+```typescript
+import { completionEngine } from "@llamacli/cli";
+
+const completions = await completionEngine.getCompletions("chat --", {
+  command: "chat",
+  position: 7,
+  workingDirectory: process.cwd(),
+});
+```
+
+#### Syntax Highlighting
+
+```typescript
+import { syntaxHighlighter } from "@llamacli/cli";
+
+// Supported languages: javascript, python, json, shell, typescript
+const highlighted = syntaxHighlighter.highlight(code, "javascript");
+const autoDetected = syntaxHighlighter.highlightAuto(code);
+```
+
+### Commands
+
+#### Available Commands
+
+- **ChatCommand** - Interactive chat sessions
+- **ConfigCommand** - Configuration management
+- **GetCommand** - Quick queries
+- **SessionCommand** - Session management
+- **PreferencesCommand** - User preferences
+
+```typescript
+import { ChatCommand, ConfigCommand } from "@llamacli/cli";
+
+const chatCommand = new ChatCommand(configStore);
+await chatCommand.run({ profile: "my-ollama" });
+
+const configCommand = new ConfigCommand(configStore);
+await configCommand.run(["list"]);
+```
+
+## Configuration Structure
+
+### User Preferences
+
+```typescript
+interface UserPreferences {
+  version: string;
+  cli: {
+    theme: string;
+    prompt: string;
+    autoComplete: boolean;
+    syntaxHighlighting: boolean;
+    showWelcome: boolean;
+    enableAnimations: boolean;
   };
-
-  getTags(): string[] {
-    return ["custom", "example"];
-  }
-
-  isAvailable(context?: ToolContext): boolean {
-    return true;
-  }
-
-  async execute(params: MyToolParams, context?: ToolContext) {
-    // 实现工具逻辑
-    return this.createSuccessResult([
-      {
-        type: "text",
-        text: `Processed: ${params.input}`,
-      },
-    ]);
-  }
+  editor: {
+    defaultEditor: string;
+    tabSize: number;
+    lineNumbers: boolean;
+    wordWrap: boolean;
+  };
+  display: {
+    maxWidth: number;
+    codeBlockStyle: string;
+    tableStyle: string;
+  };
+  behavior: {
+    confirmExit: boolean;
+    autoSaveSession: boolean;
+    sendTelemetry: boolean;
+  };
+  shortcuts: {
+    clearScreen: string;
+    exitApp: string;
+    toggleTheme: string;
+  };
+  history: {
+    enabled: boolean;
+    maxEntries: number;
+    persistAcrossSessions: boolean;
+    excludePatterns: string[];
+  };
 }
 ```
 
-### 注册自定义工具
+### LLM Profile Configuration
 
 ```typescript
-import { globalToolRegistry } from "@llamacli/core";
-
-const myTool = new MyCustomTool();
-globalToolRegistry.register(myTool);
+interface LLMProfile {
+  name: string;
+  adapter: "ollama" | "openai" | "claude" | "gemini" | "openai-compatible";
+  model: string;
+  endpoint?: string;
+  apiKey?: string;
+  timeout?: number;
+  retries?: number;
+  temperature?: number;
+  maxTokens?: number;
+}
 ```
 
-## 最佳实践
+## CLI Commands
 
-1. **错误处理**: 始终检查工具执行结果的 `isError` 字段
-2. **参数验证**: 使用工具的 `validate()` 方法验证参数
-3. **安全意识**: 对用户输入进行适当的验证和清理
-4. **资源管理**: 及时释放不需要的资源
-5. **日志记录**: 使用适当的日志级别记录操作
+### Interactive Mode Commands
+
+```bash
+# Start interactive mode
+llamacli
+
+# Available commands in interactive mode:
+help                    # Show help
+chat [message]         # Start/continue chat
+get <query>           # Quick query
+config list           # List profiles
+config use <profile>  # Switch profile
+theme <name>          # Change theme
+preferences list      # Show preferences
+session list          # List sessions
+clear                 # Clear screen
+exit                  # Exit application
+```
+
+### Command Line Usage
+
+```bash
+# Configuration
+llamacli config add my-profile
+llamacli config list
+llamacli config use my-profile
+
+# Chat
+llamacli chat "Hello, how can you help?"
+llamacli get "What is TypeScript?"
+
+# Sessions
+llamacli session list
+llamacli session save my-session
+llamacli session export my-session.json
+
+# Preferences
+llamacli preferences set cli.theme dracula
+llamacli preferences export settings.json
+```
+
+## Storage Locations
+
+- **Main Config**: `~/.llamacli/config.json`
+- **User Preferences**: `~/.llamacli/preferences.json`
+- **Command History**: `~/.llamacli/history.json`
+- **Sessions**: `~/.llamacli/sessions/`
+- **Error Reports**: `~/.llamacli/error-reports/`
+
+## Environment Variables
+
+- `LLAMACLI_DEBUG` - Enable debug mode
+- `LLAMACLI_CONFIG` - Custom config file path
+- `OPENAI_API_KEY` - OpenAI API key
+- `ANTHROPIC_API_KEY` - Claude API key
+- `GOOGLE_API_KEY` - Gemini API key
+
+## TypeScript Support
+
+Full TypeScript support with comprehensive type definitions:
+
+```typescript
+import type {
+  UserPreferences,
+  CLIPreferences,
+  LLMProfile,
+  SessionData,
+  EnhancedError,
+  PerformanceMetrics,
+} from "@llamacli/core";
+```
+
+---
+
+For implementation examples and advanced usage, see the [Developer Guide](DEVELOPER_GUIDE.md) and [User Guide](USER_GUIDE.md).
