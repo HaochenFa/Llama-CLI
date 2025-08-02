@@ -1,7 +1,7 @@
 # LlamaCLI Features Documentation
 
 **Version**: 1.0.0
-**Last Updated**: 2025-08-01
+**Last Updated**: 2025-08-02
 **Status**: Production Ready
 
 ## Overview
@@ -10,26 +10,32 @@ LlamaCLI is an AI-powered command-line development partner that provides modern 
 
 ## 🚀 Core Features
 
-### 1. Interactive CLI Interface
+### 1. Modern UI/UX Interface
 
-**Component**: `InteractiveCLI`  
-**Location**: `packages/cli/src/ui/interactive-cli.ts`
+**Component**: `ChatInterface`, `SplashScreen`, `Header`, `Footer`
+**Location**: `packages/cli/src/ui/components/`
 
-Modern command-line interface with enhanced user experience:
+Modern React + Ink based interface with professional user experience:
 
-- **Auto-completion**: Tab-based command, option, and file path completion
-- **Syntax Highlighting**: Multi-language code highlighting in output
-- **Command History**: Persistent command history with smart filtering
-- **Keyboard Shortcuts**: Standard CLI shortcuts (Ctrl+L, Ctrl+D, etc.)
-- **Event-driven Architecture**: Clean separation of UI and application logic
+- **Splash Screen**: Beautiful ASCII art logo with real initialization checks
+- **Responsive Design**: Adaptive layout for different terminal sizes
+- **Gradient Effects**: Professional color gradients and animations
+- **Smart Status Bar**: Real-time connection status, token usage, and progress
+- **Unified Shortcuts**: Ctrl+D double-tap exit, Ctrl+T theme selector
+- **Visual Theme Selector**: Interactive theme switching with preview
+- **Connection Validation**: Real LLM service connection testing
 
 **Usage**:
 
 ```bash
-# Start interactive mode
+# Start with modern UI (both commands now use same interface)
+llamacli chat
 llamacli --interactive
-# or simply
-llamacli
+
+# Keyboard shortcuts in interface:
+# Ctrl+D (double-tap) - Exit
+# Ctrl+T - Theme selector
+# ESC - Cancel/Close dialogs
 ```
 
 ### 2. Command Auto-completion System

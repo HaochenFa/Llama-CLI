@@ -22,6 +22,17 @@ llamacli preferences get cli.theme
 
 ### Switching Themes
 
+#### Interactive Theme Selector (Recommended)
+
+```bash
+# Start chat interface and press Ctrl+T
+llamacli chat
+# Then press Ctrl+T to open visual theme selector
+# Use ↑↓ to navigate, Enter to select, ESC to cancel
+```
+
+#### Command Line Theme Switching
+
 ```bash
 # Switch to Dracula theme
 llamacli preferences set cli.theme dracula

@@ -1,7 +1,7 @@
 # LlamaCLI User Guide
 
 **Version**: 1.0.0
-**Last Updated**: 2025-08-01
+**Last Updated**: 2025-08-02
 
 > 💡 **New to LlamaCLI?** Check out our [Quick Start Guide](../QUICK_START.md) for installation and basic setup.
 
@@ -13,13 +13,14 @@ This guide covers advanced features and usage patterns for LlamaCLI. For basic i
 
 ### Keyboard Shortcuts
 
-| Shortcut | Action                   |
-| -------- | ------------------------ |
-| `Ctrl+L` | Clear screen             |
-| `Ctrl+D` | Exit application         |
-| `Tab`    | Auto-completion          |
-| `↑/↓`    | Navigate command history |
-| `Ctrl+R` | Search command history   |
+| Shortcut              | Action                |
+| --------------------- | --------------------- |
+| `Ctrl+D` (double-tap) | Exit application      |
+| `Ctrl+T`              | Open theme selector   |
+| `ESC`                 | Cancel/Close dialogs  |
+| `Tab`                 | Auto-completion       |
+| `↑/↓`                 | Navigate in selectors |
+| `Enter`               | Confirm selection     |
 
 ### Command Reference
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * LlamaCLI - AI-powered command line development partner
  * Main entry point for the CLI application
@@ -82,6 +83,7 @@ async function runNonInteractiveMode(options: any) {
 
 /**
  * Start enhanced interactive mode with new CLI features
+ * Now uses the same Ink UI as chat command for consistency
  */
 async function startInteractiveMode() {
   await initializeConfig();
@@ -89,31 +91,19 @@ async function startInteractiveMode() {
   // Initialize theme manager with config store
   await themeManager.setTheme("default");
 
-  // Initialize completion engine with config store
-  completionEngine.configStore = configStore;
+  // Get default profile for interactive mode
+  const profiles = configStore.getAllProfiles();
+  if (profiles.length === 0) {
+    console.error("No profiles configured. Please run 'llamacli config' first.");
+    process.exit(1);
+  }
 
-  // Create interactive CLI instance
-  const interactiveCLI = new InteractiveCLI({
-    configStore,
-    workingDirectory: process.cwd(),
-    prompt: "llamacli> ",
-    enableCompletion: true,
-    enableSyntaxHighlighting: true,
-    theme: "default",
-  });
+  const profile = profiles.find((p) => p.isDefault) || profiles[0];
+  console.log(`Starting interactive mode with profile: ${profile.name}`);
 
-  // Handle commands from interactive CLI
-  interactiveCLI.on("command", async (command) => {
-    await handleInteractiveCommand(command, interactiveCLI);
-  });
-
-  interactiveCLI.on("exit", () => {
-    console.log("\nGoodbye! 👋");
-    process.exit(0);
-  });
-
-  // Start the interactive CLI
-  interactiveCLI.start();
+  // Use the same chat command implementation for consistency
+  const chatCommand = new ChatCommand(configStore);
+  await chatCommand.run({ profile: profile.id });
 }
 
 /**

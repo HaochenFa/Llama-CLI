@@ -3,8 +3,8 @@
  * Manages session lifecycle, persistence, and operations
  */
 
-import { EventEmitter } from 'events';
-import crypto from 'crypto';
+import { EventEmitter } from "events";
+import crypto from "crypto";
 
 import {
   SessionStorageBackend,
@@ -18,11 +18,11 @@ import {
   SessionExportOptions,
   SessionImportResult,
   SessionBranch,
-  SessionStats
-} from '../types/session.js';
-import { InternalContext, ChatMessage, ContextSettings } from '../types/context.js';
-import { ContextItem, Memory } from '../core/enhanced-context-manager.js';
-import { FileStorageBackend } from './file-storage-backend.js';
+  SessionStats,
+} from "../types/session.js";
+import { InternalContext, ChatMessage, ContextSettings } from "../types/context.js";
+import { ContextItem, Memory } from "../core/enhanced-context-manager.js";
+import { FileStorageBackend } from "./file-storage-backend.js";
 
 /**
  * Session manager events
@@ -32,7 +32,11 @@ export interface SessionManagerEvents {
   sessionLoaded: (sessionId: string, metadata: SessionMetadata) => void;
   sessionSaved: (sessionId: string, metadata: SessionMetadata) => void;
   sessionDeleted: (sessionId: string) => void;
-  sessionStatusChanged: (sessionId: string, oldStatus: SessionStatus, newStatus: SessionStatus) => void;
+  sessionStatusChanged: (
+    sessionId: string,
+    oldStatus: SessionStatus,
+    newStatus: SessionStatus
+  ) => void;
   autoSaveTriggered: (sessionId: string) => void;
   error: (error: Error, context?: string) => void;
 }
@@ -62,7 +66,7 @@ export class SessionManager extends EventEmitter {
 
   constructor(config?: Partial<SessionManagerConfig>) {
     super();
-    
+
     this.config = {
       storageBackend: new FileStorageBackend(),
       autoSaveInterval: 30000, // 30 seconds
@@ -85,12 +89,12 @@ export class SessionManager extends EventEmitter {
   async initialize(): Promise<void> {
     try {
       await this.config.storageBackend.initialize();
-      
+
       if (this.config.enableAutoCleanup) {
         await this.performAutoCleanup();
       }
     } catch (error) {
-      this.emit('error', error as Error, 'initialization');
+      this.emit("error", error as Error, "initialization");
       throw error;
     }
   }
@@ -131,7 +135,7 @@ export class SessionManager extends EventEmitter {
         parentSessionId: options.parentSessionId,
         branches: [],
         version: 1,
-        checksum: '',
+        checksum: "",
       };
 
       // Create active session
@@ -163,17 +167,16 @@ export class SessionManager extends EventEmitter {
       // Save initial state
       await this.saveSession(sessionId);
 
-      this.emit('sessionCreated', sessionId, metadata);
+      this.emit("sessionCreated", sessionId, metadata);
 
       return {
         success: true,
         data: sessionId,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.emit('error', error as Error, 'createSession');
-      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.emit("error", error as Error, "createSession");
+
       return {
         success: false,
         error: `Failed to create session: ${errorMessage}`,
@@ -230,17 +233,16 @@ export class SessionManager extends EventEmitter {
       this.activeSessions.set(sessionId, activeSession);
       this.currentSessionId = sessionId;
 
-      this.emit('sessionLoaded', sessionId, activeSession.metadata);
+      this.emit("sessionLoaded", sessionId, activeSession.metadata);
 
       return {
         success: true,
         data: activeSession,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.emit('error', error as Error, 'loadSession');
-      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.emit("error", error as Error, "loadSession");
+
       return {
         success: false,
         error: `Failed to load session: ${errorMessage}`,
@@ -284,16 +286,15 @@ export class SessionManager extends EventEmitter {
       activeSession.lastAutoSave = Date.now();
       activeSession.metadata.lastSaved = Date.now();
 
-      this.emit('sessionSaved', sessionId, activeSession.metadata);
+      this.emit("sessionSaved", sessionId, activeSession.metadata);
 
       return {
         success: true,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.emit('error', error as Error, 'saveSession');
-      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.emit("error", error as Error, "saveSession");
+
       return {
         success: false,
         error: `Failed to save session: ${errorMessage}`,
@@ -308,14 +309,14 @@ export class SessionManager extends EventEmitter {
     try {
       // Remove from active sessions
       this.activeSessions.delete(sessionId);
-      
+
       if (this.currentSessionId === sessionId) {
         this.currentSessionId = null;
       }
 
       // Delete from storage
       const deleted = await this.config.storageBackend.deleteSession(sessionId);
-      
+
       if (!deleted) {
         return {
           success: false,
@@ -323,16 +324,15 @@ export class SessionManager extends EventEmitter {
         };
       }
 
-      this.emit('sessionDeleted', sessionId);
+      this.emit("sessionDeleted", sessionId);
 
       return {
         success: true,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.emit('error', error as Error, 'deleteSession');
-      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.emit("error", error as Error, "deleteSession");
+
       return {
         success: false,
         error: `Failed to delete session: ${errorMessage}`,
@@ -346,16 +346,15 @@ export class SessionManager extends EventEmitter {
   async listSessions(filter?: SessionFilter): Promise<SessionOperationResult<SessionMetadata[]>> {
     try {
       const sessions = await this.config.storageBackend.listSessions(filter);
-      
+
       return {
         success: true,
         data: sessions,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.emit('error', error as Error, 'listSessions');
-      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.emit("error", error as Error, "listSessions");
+
       return {
         success: false,
         error: `Failed to list sessions: ${errorMessage}`,
@@ -366,38 +365,43 @@ export class SessionManager extends EventEmitter {
   /**
    * Update session status
    */
-  async updateSessionStatus(sessionId: string, status: SessionStatus): Promise<SessionOperationResult<void>> {
+  async updateSessionStatus(
+    sessionId: string,
+    status: SessionStatus
+  ): Promise<SessionOperationResult<void>> {
     try {
       const activeSession = this.activeSessions.get(sessionId);
-      
+
       if (activeSession) {
         const oldStatus = activeSession.metadata.status;
         activeSession.metadata.status = status;
         activeSession.metadata.lastActivity = Date.now();
         activeSession.isDirty = true;
-        
-        this.emit('sessionStatusChanged', sessionId, oldStatus, status);
-        
+
+        this.emit("sessionStatusChanged", sessionId, oldStatus, status);
+
         // Auto-save after status change
         await this.saveSession(sessionId);
       } else {
         // Load session, update status, and save
         const loadResult = await this.loadSession(sessionId);
         if (!loadResult.success) {
-          return loadResult;
+          return {
+            success: false,
+            error: loadResult.error,
+          };
         }
-        
+
         return await this.updateSessionStatus(sessionId, status);
       }
 
       return {
         success: true,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.emit('error', error as Error, 'updateSessionStatus');
-      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      this.emit("error", error as Error, "updateSessionStatus");
+
       return {
         success: false,
         error: `Failed to update session status: ${errorMessage}`,
@@ -497,7 +501,7 @@ export class SessionManager extends EventEmitter {
 
   // Private helper methods
   private generateSessionId(): string {
-    return `session_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+    return `session_${Date.now()}_${crypto.randomBytes(8).toString("hex")}`;
   }
 
   private createEmptyStats(): SessionStats {
@@ -521,14 +525,14 @@ export class SessionManager extends EventEmitter {
 
     this.autoSaveTimer = setInterval(async () => {
       const now = Date.now();
-      
+
       for (const [sessionId, session] of this.activeSessions.entries()) {
-        if (session.isDirty && (now - session.lastAutoSave) >= this.config.autoSaveInterval) {
+        if (session.isDirty && now - session.lastAutoSave >= this.config.autoSaveInterval) {
           try {
             await this.saveSession(sessionId);
-            this.emit('autoSaveTriggered', sessionId);
+            this.emit("autoSaveTriggered", sessionId);
           } catch (error) {
-            this.emit('error', error as Error, 'autoSave');
+            this.emit("error", error as Error, "autoSave");
           }
         }
       }
@@ -552,16 +556,20 @@ export class SessionManager extends EventEmitter {
       if (session?.isDirty) {
         await this.saveSession(oldestSessionId);
       }
-      
+
       this.activeSessions.delete(oldestSessionId);
-      
+
       if (this.currentSessionId === oldestSessionId) {
         this.currentSessionId = null;
       }
     }
   }
 
-  private async createBranch(parentSessionId: string, branchSessionId: string, branchPoint: number): Promise<void> {
+  private async createBranch(
+    parentSessionId: string,
+    branchSessionId: string,
+    branchPoint: number
+  ): Promise<void> {
     // Implementation for creating session branches
     // This would update the parent session's metadata to include the new branch
   }
@@ -585,7 +593,7 @@ export class SessionManager extends EventEmitter {
         statusesToClean: [SessionStatus.COMPLETED, SessionStatus.ARCHIVED],
       });
     } catch (error) {
-      this.emit('error', error as Error, 'autoCleanup');
+      this.emit("error", error as Error, "autoCleanup");
     }
   }
 }

@@ -2,11 +2,16 @@
  * Main chat interface component
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Text, useInput, useApp } from "ink";
 import { ChatHistory } from "./ChatHistory.js";
 import { ChatInput } from "./ChatInput.js";
+import { EnhancedChatInput } from "./EnhancedChatInput.js";
 import { StatusBar } from "./StatusBar.js";
+import { Header } from "./Header.js";
+import { Footer } from "./Footer.js";
+import { ThemeSelector } from "./ThemeSelector.js";
+import { useTerminalSize } from "../hooks/useTerminalSize.js";
 import {
   ToolConfirmationDialog,
   ShellConfirmationDialog,
@@ -37,7 +42,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [shellConfirmation, setShellConfirmation] = useState<ShellConfirmationRequest | null>(null);
   const [fileConfirmation, setFileConfirmation] = useState<FileConfirmationRequest | null>(null);
   const [sessionAllowlist, setSessionAllowlist] = useState<Set<string>>(new Set());
+  const [startTime] = useState(Date.now());
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [ctrlDCount, setCtrlDCount] = useState(0);
+  const [ctrlDTimeout, setCtrlDTimeout] = useState<NodeJS.Timeout | null>(null);
   const { exit } = useApp();
+  const { width: terminalWidth, height: terminalHeight } = useTerminalSize();
 
   // Tool confirmation handlers
   const createToolConfirmationHandler = useCallback((toolName: string, description: string, parameters: Record<string, any>) => {
@@ -152,15 +163,81 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   });
 
+  // Calculate token count (simple estimation) - memoized
+  const tokenCount = useMemo(() => {
+    return Math.round(messages.reduce((count: number, msg: any) => count + (msg.content?.length || 0), 0) / 4);
+  }, [messages]);
+
+  // Memoized elapsed time calculation
+  const elapsedTime = useMemo(() => {
+    return Math.floor((Date.now() - startTime) / 1000);
+  }, [startTime]);
+
+  // Memoized session turns calculation
+  const sessionTurns = useMemo(() => {
+    return messages.filter((m: any) => m.role === 'user').length;
+  }, [messages]);
+
+  // Handle theme selection
+  const handleThemeSelect = useCallback((themeName: string) => {
+    // Here you would implement theme switching logic
+    console.log(`Selected theme: ${themeName}`);
+    setShowThemeSelector(false);
+  }, []);
+
+  // Handle keyboard shortcuts and exit logic
+  useInput((input, key) => {
+    if (key.ctrl && input === 't') {
+      setShowThemeSelector(true);
+    }
+    if (key.escape) {
+      setShowThemeSelector(false);
+    }
+
+    // Handle Ctrl+D double-press exit
+    if (key.ctrl && (key as any).name === 'd') {
+      if (ctrlDTimeout) {
+        clearTimeout(ctrlDTimeout);
+        setCtrlDTimeout(null);
+      }
+
+      const newCount = ctrlDCount + 1;
+      setCtrlDCount(newCount);
+
+      if (newCount === 1) {
+        setStatus("Press Ctrl+D again to exit");
+        const timeout = setTimeout(() => {
+          setCtrlDCount(0);
+          setStatus(`Connected to ${profile.name}`);
+        }, 2000);
+        setCtrlDTimeout(timeout);
+      } else if (newCount >= 2) {
+        console.log("\nGoodbye! 👋");
+        exit();
+      }
+    }
+  });
+
+  // Generate suggestions based on input
+  useEffect(() => {
+    if (input.startsWith('@')) {
+      setSuggestions(['@package.json', '@src/index.ts', '@README.md']);
+    } else if (input.startsWith('/')) {
+      setSuggestions(['/help', '/theme', '/config', '/session']);
+    } else {
+      setSuggestions([]);
+    }
+  }, [input]);
+
   return (
     <Box flexDirection="column" height="100%">
-      {/* Header */}
-      <Box borderStyle="single" paddingX={1}>
-        <Text bold color="blue">
-          🦙 LlamaCLI
-        </Text>
-        <Text> - {profile.name} ({profile.model})</Text>
-      </Box>
+      {/* Enhanced Header */}
+      <Header
+        version="1.0.0"
+        terminalWidth={terminalWidth}
+        profile={profile}
+        showVersion={false}
+      />
 
       {/* Chat History */}
       <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -189,17 +266,44 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         />
       )}
 
-      {/* Status and Input */}
-      <Box flexDirection="column">
-        <StatusBar status={status} isLoading={isLoading} />
-        <ChatInput
-          value={input}
-          onChange={setInput}
-          onSubmit={handleSubmit}
-          disabled={isLoading || !!toolConfirmation || !!shellConfirmation || !!fileConfirmation}
-          placeholder="Type your message... (Ctrl+C to exit)"
+      {/* Theme Selector */}
+      {showThemeSelector && (
+        <ThemeSelector
+          onSelect={handleThemeSelect}
+          onCancel={() => setShowThemeSelector(false)}
         />
-      </Box>
+      )}
+
+      {/* Status and Input */}
+      {!showThemeSelector && (
+        <Box flexDirection="column">
+          <StatusBar
+            status={status}
+            isLoading={isLoading}
+            showProgress={true}
+            elapsedTime={elapsedTime}
+          />
+          <EnhancedChatInput
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSubmit}
+            disabled={isLoading || !!toolConfirmation || !!shellConfirmation || !!fileConfirmation}
+            placeholder="Type your message... (Ctrl+T for themes)"
+            showSuggestions={suggestions.length > 0}
+            suggestions={suggestions}
+          />
+        </Box>
+      )}
+
+      {/* Enhanced Footer */}
+      <Footer
+        model={profile.model}
+        workingDirectory={process.cwd()}
+        tokenCount={tokenCount}
+        maxTokens={4096}
+        sessionTurns={sessionTurns}
+        maxSessionTurns={50}
+      />
     </Box>
   );
 };

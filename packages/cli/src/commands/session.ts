@@ -35,6 +35,7 @@ interface SessionCommandOptions extends BaseCommandOptions {
   limit?: number;
   export?: string;
   import?: string;
+  output?: string;
   compress?: boolean;
   includeHistory?: boolean;
   includeContext?: boolean;

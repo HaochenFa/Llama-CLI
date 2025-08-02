@@ -1,7 +1,7 @@
 # LlamaCLI Developer Guide
 
 **Version**: 1.0.0
-**Last Updated**: 2025-08-01
+**Last Updated**: 2025-08-02
 
 > 🎯 **Quick Start**: New to contributing? Jump to [Contributing](#-contributing) section.
 
@@ -25,13 +25,14 @@ packages/
 
 ### Key Components
 
-| Component          | Purpose                  | Location        |
-| ------------------ | ------------------------ | --------------- |
-| **AgenticLoop**    | AI task orchestration    | `core/core/`    |
-| **ConfigStore**    | Configuration management | `core/config/`  |
-| **InteractiveCLI** | Modern CLI interface     | `cli/ui/`       |
-| **ToolRegistry**   | Tool system management   | `core/tools/`   |
-| **SessionManager** | Conversation persistence | `core/session/` |
+| Component               | Purpose                  | Location             |
+| ----------------------- | ------------------------ | -------------------- |
+| **AgenticLoop**         | AI task orchestration    | `core/core/`         |
+| **ConfigStore**         | Configuration management | `core/config/`       |
+| **ChatInterface**       | Modern React+Ink UI      | `cli/ui/components/` |
+| **ToolRegistry**        | Tool system management   | `core/tools/`        |
+| **SessionManager**      | Conversation persistence | `core/session/`      |
+| **ConnectionValidator** | LLM connection testing   | `cli/utils/`         |
 
 ## 🚀 Quick Development Setup
 

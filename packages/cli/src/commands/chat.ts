@@ -5,7 +5,7 @@
 
 import React from "react";
 import { render } from "ink";
-import { ChatInterface } from "../ui/components/ChatInterface.js";
+import { AppWithSplash } from "../ui/components/AppWithSplash.js";
 import { ConfigStore, LLMProfile } from "@llamacli/core";
 import { createAdapter } from "../utils/adapter-factory.js";
 import { createContext } from "../utils/context-factory.js";
@@ -124,12 +124,15 @@ export class ChatCommand {
         },
       };
 
-      // Render React UI
+      // Render React UI with splash screen
       const { unmount } = render(
-        React.createElement(ChatInterface, {
+        React.createElement(AppWithSplash, {
           agenticLoop,
           context,
           profile,
+          config: this.configStore,
+          showSplash: true,
+          splashDuration: 2000,
         })
       );
 
