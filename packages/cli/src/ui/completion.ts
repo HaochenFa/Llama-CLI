@@ -6,6 +6,7 @@
 import { readdir, stat } from "fs/promises";
 import { join, dirname, basename } from "path";
 import { ConfigStore } from "@llamacli/core";
+import { EnhancedCompletionEngine } from "./completion/enhanced-engine.js";
 
 export interface CompletionResult {
   completions: string[];
@@ -23,9 +24,11 @@ export interface CompletionContext {
 export class CompletionEngine {
   private commands: Map<string, CommandCompletion> = new Map();
   public configStore?: ConfigStore;
+  private enhancedEngine: EnhancedCompletionEngine;
 
   constructor(configStore?: ConfigStore) {
     this.configStore = configStore;
+    this.enhancedEngine = new EnhancedCompletionEngine();
     this.initializeCommands();
   }
 
@@ -80,7 +83,40 @@ export class CompletionEngine {
   }
 
   /**
-   * Get completions for the current input
+   * Get enhanced completions using the new engine
+   */
+  async getEnhancedCompletions(context: CompletionContext): Promise<CompletionResult> {
+    // Update enhanced engine with current config store
+    if (this.configStore) {
+      const enhancedContext = { ...context, configStore: this.configStore };
+      return this.enhancedEngine.getEnhancedCompletions(enhancedContext);
+    }
+    return this.enhancedEngine.getEnhancedCompletions(context);
+  }
+
+  /**
+   * Record command usage for history-based completions
+   */
+  recordCommandUsage(command: string): void {
+    this.enhancedEngine.recordCommandUsage(command);
+  }
+
+  /**
+   * Get completion statistics
+   */
+  getCompletionStats(): { historySize: number; cacheSize: number } {
+    return this.enhancedEngine.getStats();
+  }
+
+  /**
+   * Clear file cache
+   */
+  clearFileCache(): void {
+    this.enhancedEngine.clearFileCache();
+  }
+
+  /**
+   * Get completions for the current input (legacy method)
    */
   async getCompletions(context: CompletionContext): Promise<CompletionResult> {
     const { line, cursor } = context;
