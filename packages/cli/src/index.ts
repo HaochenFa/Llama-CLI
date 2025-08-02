@@ -14,6 +14,7 @@ import { benchmark, performanceMonitor } from "@llamacli/core";
 import { themeManager } from "./ui/theme-manager.js";
 import { completionEngine } from "./ui/completion.js";
 import { InteractiveCLI } from "./ui/interactive-cli.js";
+import { NonInteractiveProcessor } from "./non-interactive/index.js";
 
 // Start performance monitoring
 const startTime = performance.now();
@@ -26,7 +27,12 @@ program
   .name("llamacli")
   .description("AI-powered command line development partner")
   .version("1.0.0")
-  .option("-i, --interactive", "Start enhanced interactive mode");
+  .option("-i, --interactive", "Start enhanced interactive mode")
+  .option("-p, --prompt <text>", "Run in non-interactive mode with prompt")
+  .option("-f, --format <type>", "Output format (text, json, markdown)", "text")
+  .option("-o, --output <file>", "Write output to file")
+  .option("-q, --quiet", "Suppress status messages")
+  .option("-v, --verbose", "Show detailed metadata");
 
 // Initialize configuration store
 let configStore: ConfigStore;
@@ -47,6 +53,31 @@ async function initializeConfig() {
     console.error("Failed to initialize configuration:", getErrorMessage(error));
     process.exit(1);
   }
+}
+
+/**
+ * Run non-interactive mode
+ */
+async function runNonInteractiveMode(options: any) {
+  await initializeConfig();
+
+  const processor = new NonInteractiveProcessor(configStore, process.cwd());
+  const nonInteractiveOptions = NonInteractiveProcessor.parseNonInteractiveArgs(process.argv);
+
+  // Override with commander options
+  if (options.prompt) nonInteractiveOptions.prompt = options.prompt;
+  if (options.format) nonInteractiveOptions.format = options.format;
+  if (options.output) nonInteractiveOptions.output = options.output;
+  if (options.quiet) nonInteractiveOptions.quiet = options.quiet;
+  if (options.verbose) nonInteractiveOptions.verbose = options.verbose;
+
+  const result = await processor.run(nonInteractiveOptions);
+
+  if (!result.success) {
+    process.exit(1);
+  }
+
+  process.exit(0);
 }
 
 /**
@@ -308,17 +339,30 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
-// Check if we should start interactive mode
-const shouldStartInteractive =
-  process.argv.length === 2 ||
-  (process.argv.length === 3 && (process.argv[2] === "--interactive" || process.argv[2] === "-i"));
+// Check if we should run in non-interactive mode
+const shouldRunNonInteractive = NonInteractiveProcessor.shouldRunNonInteractive();
 
-if (shouldStartInteractive) {
-  // Start enhanced interactive mode
-  await startInteractiveMode();
-} else {
-  // Parse command line arguments normally
+if (shouldRunNonInteractive) {
+  // Parse arguments to get options
   program.parse();
+  const options = program.opts();
+
+  // Run non-interactive mode
+  await runNonInteractiveMode(options);
+} else {
+  // Check if we should start interactive mode
+  const shouldStartInteractive =
+    process.argv.length === 2 ||
+    (process.argv.length === 3 &&
+      (process.argv[2] === "--interactive" || process.argv[2] === "-i"));
+
+  if (shouldStartInteractive) {
+    // Start enhanced interactive mode
+    await startInteractiveMode();
+  } else {
+    // Parse command line arguments normally
+    program.parse();
+  }
 }
 
 // Record startup completion
