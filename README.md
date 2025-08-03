@@ -108,8 +108,7 @@ llamacli --help
 ## 📖 文档
 
 - **[用户指南](docs/USER_GUIDE.md)** - 完整的使用说明和最佳实践
-- **[开发者指南](docs/DEVELOPER_GUIDE.md)** - 贡献代码和扩展开发
-- **[测试指南](docs/TESTING.md)** - 测试框架和最佳实践
+- **[开发者指南](docs/DEVELOPER_GUIDE.md)** - 贡献代码、测试和扩展开发
 - **[API 参考](docs/API_REFERENCE.md)** - 详细的 API 文档
 - **[项目路线图](docs/ROADMAP.md)** - 功能规划和开发进度
 

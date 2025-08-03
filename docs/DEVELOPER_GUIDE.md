@@ -38,11 +38,15 @@ packages/
 
 ### Prerequisites
 
-- Node.js >= 18.0.0, npm >= 9.0.0
+- Node.js 22.17.0 (使用 nvm 管理版本，项目包含 .nvmrc 文件)
+- npm >= 10.0.0
 
 ### One-Command Setup
 
 ```bash
+# 确保使用正确的 Node.js 版本
+source ~/.nvm/nvm.sh && nvm use
+
 git clone https://github.com/HaochenFa/Llama-CLI.git
 cd Llama-CLI && npm install && npm run build && npm link packages/cli
 ```
