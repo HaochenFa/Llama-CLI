@@ -128,16 +128,16 @@ out/
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 
-# esbuild outputs
-*.js
-*.mjs
-!esbuild.config.js
-!jest.config.js
-!vitest.config.js
-!rollup.config.js
-!webpack.config.js
-!vite.config.js
+# TypeScript compilation outputs (only in source directories)
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.mjs
+
+# Keep configuration files and scripts
+!*.config.js
+!*.config.mjs
 !scripts/*.js
+!scripts/*.mjs
 
 # Package build artifacts
 packages/*/dist/
