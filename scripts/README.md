@@ -16,6 +16,13 @@ This directory contains development and testing scripts for LlamaCLI, following 
 
 ### 🧪 Testing Scripts
 
+#### Test Infrastructure
+
+- **`run-tests.js`** - Enhanced test runner with multiple modes
+- **`validate-testing-infrastructure.js`** - Test infrastructure validation
+
+#### Integration Tests
+
 - **`test-basic-integration.js`** - Basic integration tests
 - **`test-cli-features.js`** - CLI feature validation
 - **`test-integration.js`** - Full integration testing
@@ -31,6 +38,14 @@ This directory contains development and testing scripts for LlamaCLI, following 
 ```bash
 # Build project first (required for most scripts)
 npm run build
+
+# Test commands
+npm run test:all          # Run all tests
+npm run test:coverage     # Run tests with coverage
+npm run test:core         # Run core package tests
+npm run test:cli          # Run CLI package tests
+npm run test:watch        # Run tests in watch mode
+npm run test:validate     # Validate test infrastructure
 
 # Run performance analysis
 npm run perf
