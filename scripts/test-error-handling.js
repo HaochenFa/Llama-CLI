@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// Ensure we use the correct Node.js version
-process.env.PATH = "/opt/homebrew/bin:" + process.env.PATH;
-
 /**
  * Test Script for Enhanced Error Handling System
  * Tests error processing, display, and reporting functionality

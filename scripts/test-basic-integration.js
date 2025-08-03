@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// Ensure we use the correct Node.js version
-process.env.PATH = "/opt/homebrew/bin:" + process.env.PATH;
-
 /**
  * Basic Integration Test for CLI Features
  * Tests basic functionality without full build
