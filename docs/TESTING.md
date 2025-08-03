@@ -5,12 +5,14 @@ LlamaCLI 采用现代化的测试策略，确保代码质量和系统稳定性�
 ## 测试框架
 
 ### 主要工具
+
 - **Vitest** - 主要测试框架，快速且现代化
 - **@testing-library/react** - React 组件测试
 - **MSW (Mock Service Worker)** - API 模拟
 - **Happy DOM** - 轻量级 DOM 环境
 
 ### 测试类型
+
 1. **单元测试** - 测试独立组件和函数
 2. **集成测试** - 测试模块间交互
 3. **端到端测试** - 测试完整用户流程
@@ -94,22 +96,22 @@ packages/
 ### 基本测试结构
 
 ```typescript
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
-describe('ComponentName', () => {
+describe("ComponentName", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should perform expected behavior', () => {
+  it("should perform expected behavior", () => {
     // Arrange
-    const input = 'test input';
-    
+    const input = "test input";
+
     // Act
     const result = functionUnderTest(input);
-    
+
     // Assert
-    expect(result).toBe('expected output');
+    expect(result).toBe("expected output");
   });
 });
 ```
@@ -117,23 +119,23 @@ describe('ComponentName', () => {
 ### 使用测试工具
 
 ```typescript
-import { 
+import {
   createMockLLMAdapter,
   createMockSession,
   mockFs,
-  setupMockProject 
-} from '../test-utils/index.js';
+  setupMockProject,
+} from "../test-utils/index.js";
 
-describe('SessionManager', () => {
+describe("SessionManager", () => {
   beforeEach(() => {
     mockFs.clear();
     setupMockProject();
   });
 
-  it('should create session', async () => {
+  it("should create session", async () => {
     const adapter = createMockLLMAdapter();
     const session = createMockSession();
-    
+
     // Test implementation
   });
 });
@@ -142,39 +144,40 @@ describe('SessionManager', () => {
 ### 异步测试
 
 ```typescript
-it('should handle async operations', async () => {
+it("should handle async operations", async () => {
   const promise = asyncFunction();
-  await expect(promise).resolves.toBe('expected result');
+  await expect(promise).resolves.toBe("expected result");
 });
 
-it('should handle errors', async () => {
+it("should handle errors", async () => {
   const promise = failingAsyncFunction();
-  await expect(promise).rejects.toThrow('Expected error');
+  await expect(promise).rejects.toThrow("Expected error");
 });
 ```
 
 ### 模拟和间谍
 
 ```typescript
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // 模拟函数
 const mockFn = vi.fn();
-mockFn.mockReturnValue('mocked result');
+mockFn.mockReturnValue("mocked result");
 
 // 间谍函数
-const spy = vi.spyOn(object, 'method');
-expect(spy).toHaveBeenCalledWith('expected argument');
+const spy = vi.spyOn(object, "method");
+expect(spy).toHaveBeenCalledWith("expected argument");
 
 // 模拟模块
-vi.mock('fs/promises', () => ({
-  readFile: vi.fn().mockResolvedValue('file content'),
+vi.mock("fs/promises", () => ({
+  readFile: vi.fn().mockResolvedValue("file content"),
 }));
 ```
 
 ## 覆盖率要求
 
 ### 阈值设置
+
 - **Core 包**: 85% (分支、函数、行、语句)
 - **CLI 包**: 80% (分支、函数、行、语句)
 
@@ -192,20 +195,24 @@ open packages/cli/coverage/index.html
 ## 最佳实践
 
 ### 测试命名
+
 - 使用描述性的测试名称
 - 遵循 "should [expected behavior] when [condition]" 格式
 
 ### 测试组织
+
 - 每个源文件对应一个测试文件
 - 使用 `describe` 块组织相关测试
 - 使用 `beforeEach`/`afterEach` 进行设置和清理
 
 ### 模拟策略
+
 - 模拟外部依赖（API、文件系统、数据库）
 - 避免模拟被测试的代码
 - 使用工厂函数创建测试数据
 
 ### 断言
+
 - 使用具体的断言而非通用的 `toBeTruthy()`
 - 测试边界条件和错误情况
 - 验证副作用（函数调用、状态变化）
@@ -234,6 +241,7 @@ npm test -- --reporter=verbose
 ## 持续集成
 
 测试在以下情况自动运行：
+
 - 每次 `git push`
 - Pull Request 创建和更新
 - 定期构建
