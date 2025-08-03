@@ -16,12 +16,21 @@
     "build:parallel": "npm run build --workspaces",
     "dev": "npm run dev --workspace=@llamacli/cli",
     "test": "vitest",
+    "test:integration": "npm run build && node scripts/test-basic-integration.js",
+    "test:integration:full": "npm run build && node scripts/test-integration.js",
+    "test:features": "npm run build && node scripts/test-cli-features.js",
+    "test:error": "npm run build && node scripts/test-error-handling.js",
+    "test:preferences": "npm run build && node scripts/test-preferences.js",
     "lint": "eslint packages/*/src/**/*.ts",
     "format": "prettier --write packages/*/src/**/*.ts",
-    "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
+    "clean": "node scripts/clean.js",
     "typecheck": "tsc --noEmit",
+    "demo": "npm run build && node scripts/interactive-demo.js",
+    "demo:simple": "node scripts/simple-cli-demo.js",
     "perf": "node scripts/performance-analysis.js",
-    "perf:build": "npm run build && npm run perf"
+    "perf:build": "npm run build && npm run perf",
+    "perf:simple": "node scripts/simple-perf-test.js",
+    "scripts:validate": "node scripts/validate-scripts.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

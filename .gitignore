@@ -137,6 +137,7 @@ tsconfig.tsbuildinfo
 !rollup.config.js
 !webpack.config.js
 !vite.config.js
+!scripts/*.js
 
 # Package build artifacts
 packages/*/dist/
