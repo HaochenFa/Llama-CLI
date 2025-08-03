@@ -1,16 +1,16 @@
 # LlamaCLI Examples & Guides
 
-Practical examples and configuration guides to help you get the most out of LlamaCLI.
+Practical examples and configuration guides to help you get the most out of LlamaCLI v1.0.0.
 
 ## 📋 Example Categories
 
 ### 🔧 Configuration & Setup
 
-| Guide                                                       | Description                             | Difficulty   |
-| ----------------------------------------------------------- | --------------------------------------- | ------------ |
-| **[Adapter Configurations](adapter-configurations.md)**     | Complete LLM provider setup guide       | Beginner     |
-| **[User Preferences](user-preferences.md)**                 | Customizing CLI behavior and appearance | Intermediate |
-| **[Themes and Customization](themes-and-customization.md)** | Visual themes and UI customization      | Beginner     |
+| Guide                                                       | Description                                     | Difficulty   |
+| ----------------------------------------------------------- | ----------------------------------------------- | ------------ |
+| **[Adapter Configurations](adapter-configurations.md)**     | Complete LLM provider setup guide (5 providers) | Beginner     |
+| **[User Preferences](user-preferences.md)**                 | Customizing CLI behavior (50+ options)          | Intermediate |
+| **[Themes and Customization](themes-and-customization.md)** | Visual themes and UI customization (5 themes)   | Beginner     |
 
 ### 💬 Usage Patterns
 
@@ -23,19 +23,32 @@ Practical examples and configuration guides to help you get the most out of Llam
 ### Essential Commands
 
 ```bash
-# Interactive mode (recommended for beginners)
+# Interactive mode with modern UI (recommended)
 llamacli
 
 # Quick one-off questions
 llamacli get "Best practices for React hooks"
 
-# Chat with file context
-llamacli chat "Review this code for security issues" --file app.js
+# Chat with file context using @ syntax
+llamacli chat "Review @src/app.js for security issues"
+
+# Non-interactive mode for scripting
+echo "Analyze this code" | llamacli --format json --output report.json
 
 # Configuration management
 llamacli config list                    # View all profiles
 llamacli config add my-gpt4            # Add new profile
 llamacli config use my-gpt4             # Switch profile
+
+# Preferences management (50+ options)
+llamacli preferences list              # Show all preferences
+llamacli preferences set cli.theme dracula
+llamacli preferences export backup.json
+
+# Session management
+llamacli session list                  # List all sessions
+llamacli session save my-project       # Save current session
+llamacli session load my-project       # Load saved session
 ```
 
 ## 📚 Detailed Examples

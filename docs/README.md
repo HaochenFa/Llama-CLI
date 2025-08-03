@@ -1,6 +1,8 @@
 # LlamaCLI Documentation
 
-Welcome to the LlamaCLI documentation! This guide will help you get started and make the most of your AI-powered command-line experience.
+**Version**: 1.0.0 | **Last Updated**: 2025-08-03
+
+Welcome to the LlamaCLI documentation! This guide will help you get started and make the most of your AI-powered command-line experience with modern UI, intelligent features, and comprehensive customization options.
 
 ## 📚 Documentation Structure
 
@@ -40,7 +42,7 @@ Welcome to the LlamaCLI documentation! This guide will help you get started and 
 
 1. **Start Here**: [Quick Start Guide](../QUICK_START.md)
 2. **Learn More**: [User Guide](USER_GUIDE.md)
-3. **Get Help**: [Troubleshooting](#troubleshooting)
+3. **Get Help**: [Troubleshooting](#-troubleshooting)
 
 ### For Developers
 
@@ -116,7 +118,7 @@ Welcome to the LlamaCLI documentation! This guide will help you get started and 
 ## 📝 Documentation Versions
 
 - **Current Version**: 1.0.0
-- **Last Updated**: 2025-08-01
+- **Last Updated**: 2025-08-03
 - **Language Support**: Chinese (primary), English (core documents)
 
 ## 🤝 Contributing to Documentation
@@ -129,4 +131,4 @@ Found an error or want to improve the documentation? We welcome contributions!
 
 ---
 
-**Need immediate help?** Start with the [Quick Start Guide](../QUICK_START.md) or check [Troubleshooting](#troubleshooting).
+**Need immediate help?** Start with the [Quick Start Guide](../QUICK_START.md) or check [Troubleshooting](#-troubleshooting).

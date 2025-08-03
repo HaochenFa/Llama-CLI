@@ -13,14 +13,16 @@ This guide covers advanced features and usage patterns for LlamaCLI. For basic i
 
 ### Keyboard Shortcuts
 
-| Shortcut              | Action                |
-| --------------------- | --------------------- |
-| `Ctrl+D` (double-tap) | Exit application      |
-| `Ctrl+T`              | Open theme selector   |
-| `ESC`                 | Cancel/Close dialogs  |
-| `Tab`                 | Auto-completion       |
-| `↑/↓`                 | Navigate in selectors |
-| `Enter`               | Confirm selection     |
+| Shortcut              | Action                        |
+| --------------------- | ----------------------------- |
+| `Ctrl+D` (double-tap) | Exit application              |
+| `Ctrl+T`              | Open visual theme selector    |
+| `ESC`                 | Cancel/Close dialogs          |
+| `Tab`                 | Smart auto-completion         |
+| `↑/↓`                 | Navigate in selectors/history |
+| `Enter`               | Confirm selection             |
+| `Ctrl+C`              | Interrupt current operation   |
+| `Ctrl+L`              | Clear screen (in shell mode)  |
 
 ### Command Reference
 
@@ -29,10 +31,20 @@ This guide covers advanced features and usage patterns for LlamaCLI. For basic i
 | `help`                   | Show help information       | `help`                            |
 | `chat [message]`         | Start/continue conversation | `chat "Review this code"`         |
 | `get <query>`            | Quick one-off questions     | `get "Python list comprehension"` |
-| `config list/use`        | Manage LLM profiles         | `config use my-ollama`            |
-| `theme <name>`           | Change visual theme         | `theme dracula`                   |
+| `config list/use/add`    | Manage LLM profiles         | `config use my-ollama`            |
 | `session list/save/load` | Manage sessions             | `session save my-project`         |
 | `preferences list/set`   | Manage settings             | `preferences set cli.theme light` |
+
+### Slash Commands (Meta-level CLI Control)
+
+| Command       | Description                | Example Usage |
+| ------------- | -------------------------- | ------------- |
+| `/help`       | Show interactive help      | `/help`       |
+| `/theme`      | Open theme selector        | `/theme`      |
+| `/config`     | Quick configuration access | `/config`     |
+| `/status`     | Show system status         | `/status`     |
+| `/completion` | Toggle auto-completion     | `/completion` |
+| `/clear`      | Clear chat history         | `/clear`      |
 
 ## ⚙️ Advanced Configuration
 

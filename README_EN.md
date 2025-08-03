@@ -16,18 +16,25 @@ A modern AI-powered command-line development partner designed for developers. Pr
 
 ### 🖥️ Modern CLI Experience
 
-- 🔤 **Smart Completion**: Context-aware auto-completion for commands, options, and file paths
-- 🎨 **Syntax Highlighting**: Multi-language code highlighting (JavaScript, Python, JSON, etc.)
-- 🌈 **Theme System**: 5 built-in themes + custom theme support
-- ⌨️ **Interactive Interface**: Modern interactive CLI with keyboard shortcuts
-- 📚 **Command History**: Smart command history management with search and filtering
+- 🎭 **Splash Screen**: Beautiful ASCII art logo with real-time initialization progress
+- 🎨 **Gradient Effects**: Professional gradient colors and animations based on React+Ink framework
+- 📱 **Responsive Design**: Adaptive layout for different terminal sizes with optimized layouts
+- 🔤 **Smart Completion**: Context-aware auto-completion for commands, options, and file paths with fuzzy matching
+- 🌈 **Theme System**: 5 built-in themes (Default, Light, Dracula, GitHub, Monokai) + visual theme selector (Ctrl+T)
+- ⌨️ **Unified Shortcuts**: Ctrl+D double-tap exit, Ctrl+T theme switching, ESC cancel operations
+- 📊 **Smart Status Bar**: Real-time display of connection status, token usage, progress, memory usage, and Git status
+- 📁 **File References**: @path/to/file syntax for direct file content reference with smart path suggestions
+- 🔧 **Slash Commands**: Meta-level CLI control (/help, /theme, /config, /status, /completion, etc.)
+- 🐚 **Shell Mode**: Seamless shell command execution and secure mode switching
+- 🚀 **Non-Interactive Mode**: Complete pipeline input, scripting, and automation support with JSON/Markdown output
+- 🔍 **Connection Validation**: Real-time validation of LLM connections, configuration validity, and working environment
 
 ### 🛡️ Reliability & User Experience
 
-- 🚨 **Smart Error Handling**: Converts technical errors into user-friendly guidance
-- ⚙️ **Personalized Configuration**: 50+ configurable options with import/export support
-- 🚀 **High Performance**: Startup time <350ms, memory usage <30MB (65% faster than target)
-- 🛡️ **Security Mechanisms**: Complete tool confirmation and permission management system
+- 🚨 **Smart Error Handling**: Converts technical errors into user-friendly guidance with auto-recovery
+- ⚙️ **Personalized Configuration**: 50+ configurable options with import/export support and multi-level configuration management
+- 🚀 **High Performance**: Startup time <350ms, memory usage <30MB, optimized response speed
+- 🛡️ **Security Mechanisms**: Complete tool confirmation and permission management system with secure sandbox execution
 
 ## 🚀 Quick Start
 

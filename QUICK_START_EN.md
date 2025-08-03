@@ -28,25 +28,32 @@ npm link packages/cli
 ### First-Time Setup
 
 ```bash
-# Start LlamaCLI
+# Start LlamaCLI with modern UI
 llamacli
 
 # First run will automatically launch configuration wizard
 # Choose your LLM provider:
-# - Ollama (local)
-# - OpenAI (cloud)
-# - Claude (cloud)
-# - Gemini (cloud)
+# - Ollama (local) - Privacy-first, runs on your machine
+# - OpenAI (cloud) - GPT-4, GPT-3.5-turbo models
+# - Claude (cloud) - Anthropic's Claude models
+# - Gemini (cloud) - Google's Gemini models
+# - OpenAI-Compatible (local/cloud) - Custom endpoints
 ```
 
 ### Basic Usage
 
 ```bash
-# Interactive mode (recommended)
+# Interactive mode with modern UI (recommended)
 llamacli
 
 # Quick Q&A
 llamacli get "How to implement deep copy in JavaScript?"
+
+# Chat with file references
+llamacli chat "Review @src/app.js for potential issues"
+
+# Non-interactive mode for automation
+echo "Analyze this code" | llamacli --format json
 
 # Start conversation
 llamacli chat "Hello, please help me analyze this code"

@@ -1,7 +1,7 @@
 # LlamaCLI API Reference
 
 **Version**: 1.0.0
-**Last Updated**: 2025-08-01
+**Last Updated**: 2025-08-03
 
 ## Overview
 
@@ -33,10 +33,10 @@ const profiles = configStore.getProfiles();
 
 #### UserPreferencesManager
 
-Comprehensive user preferences system with 50+ configurable options.
+Comprehensive user preferences system with 50+ configurable options across 6 categories.
 
 ```typescript
-import { userPreferencesManager } from "@llamacli/core";
+import { userPreferencesManager, UserPreferences } from "@llamacli/core";
 
 // Initialize
 await userPreferencesManager.initialize();
@@ -45,13 +45,29 @@ await userPreferencesManager.initialize();
 const cliPrefs = userPreferencesManager.getCLIPreferences();
 const editorPrefs = userPreferencesManager.getEditorPreferences();
 const displayPrefs = userPreferencesManager.getDisplayPreferences();
+const behaviorPrefs = userPreferencesManager.getBehaviorPreferences();
+const shortcutPrefs = userPreferencesManager.getShortcutPreferences();
+const historyPrefs = userPreferencesManager.getHistoryPreferences();
 
-// Update preferences
+// Update specific preference categories
 await userPreferencesManager.updateCLIPreferences({
   theme: "dracula",
   autoComplete: true,
   syntaxHighlighting: true,
+  enableAnimations: true,
+  compactMode: false,
 });
+
+// Update display preferences
+await userPreferencesManager.updateDisplayPreferences({
+  fontSize: 14,
+  fontFamily: "JetBrains Mono",
+  lineHeight: 1.5,
+});
+
+// Import/Export preferences
+await userPreferencesManager.exportPreferences("./backup.json");
+await userPreferencesManager.importPreferences("./backup.json");
 
 // Watch for changes
 const unwatch = userPreferencesManager.onPreferencesChange((prefs) => {
@@ -315,12 +331,56 @@ interface LLMProfile {
 }
 ```
 
+## UI Components (React + Ink)
+
+### Core UI Components
+
+```typescript
+import {
+  ChatInterface,
+  SplashScreen,
+  ThemeSelector,
+  StatusBar,
+  Header,
+  Footer,
+} from "@llamacli/cli";
+
+// Splash Screen with initialization
+<SplashScreen
+  version="1.0.0"
+  terminalWidth={80}
+  profile={{ name: "ollama", model: "llama3.2" }}
+  workingDirectory="/path/to/project"
+  showInitializationSteps={true}
+  autoHide={true}
+  autoHideDelay={3000}
+  onComplete={() => console.log("Initialization complete")}
+/>
+
+// Theme Selector
+<ThemeSelector
+  onSelect={(theme, scope) => console.log(`Selected ${theme} for ${scope}`)}
+  onHighlight={(theme) => console.log(`Highlighted ${theme}`)}
+  settings={loadedSettings}
+  terminalWidth={80}
+/>
+
+// Status Bar with real-time info
+<StatusBar
+  connectionStatus="connected"
+  tokenUsage={{ used: 150, limit: 1000 }}
+  memoryUsage="25MB"
+  gitStatus={{ branch: "main", changes: 2 }}
+  showProgress={true}
+/>
+```
+
 ## CLI Commands
 
 ### Interactive Mode Commands
 
 ```bash
-# Start interactive mode
+# Start interactive mode with modern UI
 llamacli
 
 # Available commands in interactive mode:
@@ -329,11 +389,18 @@ chat [message]         # Start/continue chat
 get <query>           # Quick query
 config list           # List profiles
 config use <profile>  # Switch profile
-theme <name>          # Change theme
 preferences list      # Show preferences
 session list          # List sessions
 clear                 # Clear screen
 exit                  # Exit application
+
+# Slash commands (meta-level control):
+/help                 # Interactive help
+/theme                # Open theme selector
+/config               # Quick configuration
+/status               # Show system status
+/completion           # Toggle auto-completion
+/clear                # Clear chat history
 ```
 
 ### Command Line Usage

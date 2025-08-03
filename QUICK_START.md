@@ -28,34 +28,42 @@ npm link packages/cli
 ### 首次配置
 
 ```bash
-# 启动 LlamaCLI
+# 启动 LlamaCLI（现代化UI界面）
 llamacli
 
 # 首次运行会自动启动配置向导
 # 选择您的 LLM 提供商：
-# - Ollama (本地)
-# - OpenAI (云端)
-# - Claude (云端)
-# - Gemini (云端)
+# - Ollama (本地) - 隐私优先，在您的设备上运行
+# - OpenAI (云端) - GPT-4, GPT-3.5-turbo 模型
+# - Claude (云端) - Anthropic 的 Claude 模型
+# - Gemini (云端) - Google 的 Gemini 模型
+# - OpenAI-Compatible (本地/云端) - 自定义端点
 ```
 
 ### 基本使用
 
 ```bash
-# 交互式模式（推荐）
+# 交互式模式（推荐，现代化UI）
 llamacli
 
 # 快速问答
 llamacli get "如何在 JavaScript 中实现深拷贝？"
 
-# 开始对话
-llamacli chat "你好，请帮我分析这个代码"
+# 使用文件引用语法进行对话
+llamacli chat "请分析 @src/app.js 中的潜在问题"
+
+# 非交互模式（用于自动化）
+echo "分析这段代码" | llamacli --format json
 
 # 查看配置
 llamacli config list
 
 # 更换主题
 llamacli preferences set cli.theme dracula
+
+# 会话管理
+llamacli session save my-project
+llamacli session load my-project
 ```
 
 ### 常用功能
