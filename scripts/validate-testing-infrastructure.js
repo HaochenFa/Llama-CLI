@@ -77,12 +77,13 @@ function validateTestFiles() {
   console.log("\n📝 Validating test files...");
 
   const testFiles = [
-    "packages/core/src/config/__tests__/config.test.ts",
-    "packages/core/src/config/__tests__/user-preferences.test.ts",
-    "packages/core/src/mcp/__tests__/client.test.ts",
-    "packages/core/src/session/__tests__/session-manager.test.ts",
     "packages/core/src/adapters/__tests__/adapters.test.ts",
     "packages/core/src/core/__tests__/enhanced-agentic-loop.test.ts",
+    "packages/core/src/tools/shell/__tests__/execute.test.ts",
+    "packages/core/src/tools/filesystem/__tests__/read-file.test.ts",
+    "packages/core/src/tools/analysis/__tests__/analysis-tools.test.ts",
+    "packages/core/src/tools/network/__tests__/network-tools-integration.test.ts",
+    "packages/core/src/__tests__/integration.test.ts",
     "packages/cli/src/__tests__/cli.test.ts",
   ];
 
