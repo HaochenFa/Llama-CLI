@@ -27,6 +27,13 @@
     }
   },
   "references": [{ "path": "./packages/core" }, { "path": "./packages/cli" }],
-  "exclude": ["node_modules", "**/dist", "packages/*/dist", "**/*.test.ts", "**/*.spec.ts"],
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "packages/*/dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/test-utils/**/*"
+  ],
   "include": ["packages/*/src/**/*"]
 }
