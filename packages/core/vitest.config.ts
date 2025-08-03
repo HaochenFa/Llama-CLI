@@ -5,9 +5,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["packages/*/src/**/*.{test,spec}.{js,ts,tsx}"],
+    include: ["src/**/*.{test,spec}.{js,ts}"],
     exclude: ["node_modules", "dist", "**/*.d.ts"],
-    setupFiles: ["./vitest.setup.ts"],
+    setupFiles: ["../../vitest.setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
@@ -18,7 +18,7 @@ export default defineConfig({
         "**/*.config.*",
         "**/index.ts",
         "**/__tests__/**",
-        "**/test-utils/**",
+        "**/test-utils/**"
       ],
       thresholds: {
         global: {
@@ -31,18 +31,10 @@ export default defineConfig({
     },
     testTimeout: 15000,
     hookTimeout: 15000,
-    // Enable parallel testing for better performance
-    pool: "threads",
-    poolOptions: {
-      threads: {
-        singleThread: false,
-      },
-    },
   },
   resolve: {
     alias: {
-      "@llamacli/core": path.resolve(__dirname, "packages/core/src"),
-      "@llamacli/cli": path.resolve(__dirname, "packages/cli/src"),
+      "@llamacli/core": path.resolve(__dirname, "src"),
     },
   },
 });

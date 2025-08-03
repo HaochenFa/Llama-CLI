@@ -161,9 +161,51 @@ chore: maintenance tasks
 
 #### Testing
 
+LlamaCLI uses Vitest as the primary testing framework with comprehensive test coverage.
+
 ```bash
+# Basic testing commands
 npm test                    # Run all tests
-npm run test:coverage       # Test with coverage
+npm run test:coverage       # Test with coverage report
+npm test -- --run          # Run tests without watch mode
+npm test -- --ui           # Run tests with UI interface
+
+# Package-specific testing
+npm test --workspace=@llamacli/core    # Test core package only
+npm test --workspace=@llamacli/cli     # Test CLI package only
+
+# Integration testing
+npm run test:integration    # Basic integration tests
+npm run test:features       # CLI feature tests
+npm run test:error          # Error handling tests
+```
+
+**Test Structure:**
+
+- **Unit Tests**: `packages/*/src/**/*.{test,spec}.ts`
+- **Integration Tests**: `scripts/test-*.js`
+- **Test Utilities**: `packages/core/src/test-utils/`
+
+**Coverage Thresholds:**
+
+- Core package: 85% (branches, functions, lines, statements)
+- CLI package: 80% (branches, functions, lines, statements)
+
+**Writing Tests:**
+
+```typescript
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { createMockLLMAdapter } from "../test-utils/mock-adapters.js";
+
+describe("MyComponent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should work correctly", () => {
+    // Test implementation
+  });
+});
 ```
 
 #### Debugging

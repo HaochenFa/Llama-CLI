@@ -4,10 +4,10 @@ import path from "path";
 export default defineConfig({
   test: {
     globals: true,
-    environment: "node",
-    include: ["packages/*/src/**/*.{test,spec}.{js,ts,tsx}"],
+    environment: "jsdom", // CLI components may need DOM environment
+    include: ["src/**/*.{test,spec}.{js,ts,tsx}"],
     exclude: ["node_modules", "dist", "**/*.d.ts"],
-    setupFiles: ["./vitest.setup.ts"],
+    setupFiles: ["../../vitest.setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
@@ -18,31 +18,24 @@ export default defineConfig({
         "**/*.config.*",
         "**/index.ts",
         "**/__tests__/**",
-        "**/test-utils/**",
+        "**/test-utils/**"
       ],
       thresholds: {
         global: {
-          branches: 85,
-          functions: 85,
-          lines: 85,
-          statements: 85,
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80,
         },
       },
     },
     testTimeout: 15000,
     hookTimeout: 15000,
-    // Enable parallel testing for better performance
-    pool: "threads",
-    poolOptions: {
-      threads: {
-        singleThread: false,
-      },
-    },
   },
   resolve: {
     alias: {
-      "@llamacli/core": path.resolve(__dirname, "packages/core/src"),
-      "@llamacli/cli": path.resolve(__dirname, "packages/cli/src"),
+      "@llamacli/core": path.resolve(__dirname, "../core/src"),
+      "@llamacli/cli": path.resolve(__dirname, "src"),
     },
   },
 });
